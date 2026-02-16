@@ -1,0 +1,52 @@
+# easy_support_flutter
+
+A Flutter SDK wrapper for your existing web support widget (`/widget/sdk.js`).
+
+## What this package gives you
+
+- `EasySupport.init(config)` to set SDK config once
+- `EasySupport.open(context)` to open chat in a bottom sheet
+- `EasySupportView(config: ...)` if you want to embed the widget directly
+
+## Install
+
+```yaml
+dependencies:
+  easy_support_flutter:
+    path: ../easy_support_flutter
+```
+
+## Usage
+
+```dart
+import 'package:easy_support_flutter/easy_support_flutter.dart';
+
+EasySupport.init(
+  const EasySupportConfig(
+    sdkBaseUrl: 'https://widget.your-domain.com',
+    baseUrl: 'https://api.your-domain.com',
+    channelToken: 'api_xxx',
+    autoOpen: true,
+  ),
+);
+
+await EasySupport.open(context);
+```
+
+## Embed directly in a screen
+
+```dart
+EasySupportView(
+  config: const EasySupportConfig(
+    sdkBaseUrl: 'https://widget.your-domain.com',
+    baseUrl: 'https://api.your-domain.com',
+    channelToken: 'api_xxx',
+  ),
+)
+```
+
+## Notes
+
+- Use public HTTPS URLs in production.
+- Do not expose secret server keys in client config.
+- Your backend must allow calls from app webview clients.
