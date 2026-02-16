@@ -34,6 +34,13 @@ EasySupport.init(
 await EasySupport.open(context);
 ```
 
+## Optional direct sdk.js URL
+
+You can pass either of these:
+
+- Domain/base URL: `https://easysupport-portal.onevision.io`
+- Direct script URL: `https://easysupport-portal.onevision.io/widget/sdk.js`
+
 ## Embed directly in a screen
 
 ```dart

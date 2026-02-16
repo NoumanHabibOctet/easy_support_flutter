@@ -98,7 +98,7 @@ class EasySupport {
         g.src = $sdkScriptUrl;
         g.async = true;
         g.onerror = function() {
-          console.error('Failed to load support sdk.js');
+          console.error('Failed to load support sdk.js from ' + g.src);
         };
         s.parentNode.insertBefore(g, s);
 

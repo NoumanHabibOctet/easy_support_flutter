@@ -14,6 +14,16 @@ void main() {
     expect(config.normalizedApiBaseUrl, 'https://api.example.com/api/v1');
   });
 
+  test('accepts direct sdk script URL', () {
+    const config = EasySupportConfig(
+      sdkBaseUrl: 'https://widget.example.com/widget/sdk.js',
+      baseUrl: 'https://api.example.com',
+      channelToken: 'api_test_123',
+    );
+
+    expect(config.sdkScriptUrl, 'https://widget.example.com/widget/sdk.js');
+  });
+
   test('creates js options with required values', () {
     const config = EasySupportConfig(
       sdkBaseUrl: 'https://widget.example.com',

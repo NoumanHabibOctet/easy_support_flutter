@@ -25,8 +25,13 @@ class EasySupportConfig {
   final bool isMediaEnabled;
   final Map<String, String> additionalHeaders;
 
-  String get sdkScriptUrl =>
-      '${_stripTrailingSlashes(sdkBaseUrl)}/widget/sdk.js';
+  String get sdkScriptUrl {
+    final normalized = sdkBaseUrl.trim();
+    if (_isDirectSdkScriptUrl(normalized)) {
+      return normalized;
+    }
+    return '${_stripTrailingSlashes(normalized)}/widget/sdk.js';
+  }
 
   String get normalizedBaseUrl => '${_stripTrailingSlashes(baseUrl)}/';
 
@@ -80,6 +85,12 @@ class EasySupportConfig {
       isMediaEnabled: isMediaEnabled ?? this.isMediaEnabled,
       additionalHeaders: additionalHeaders ?? this.additionalHeaders,
     );
+  }
+
+  static bool _isDirectSdkScriptUrl(String value) {
+    final uri = Uri.tryParse(value);
+    final path = uri?.path.toLowerCase() ?? value.toLowerCase();
+    return path.endsWith('/widget/sdk.js') || path.endsWith('.js');
   }
 
   static String _stripTrailingSlashes(String value) {
