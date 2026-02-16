@@ -41,8 +41,10 @@ class EasySupport {
       context: context,
       isScrollControlled: true,
       useSafeArea: useSafeArea,
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return SizedBox(
+        return Container(
+          color: Colors.transparent,
           height: MediaQuery.of(sheetContext).size.height * heightFactor,
           child: EasySupportView(
             config: EasySupport.config,
@@ -67,7 +69,10 @@ class EasySupport {
           },
         ),
       )
-      ..loadHtmlString(_buildHtml(config));
+      ..loadHtmlString(
+        _buildHtml(config),
+        baseUrl: config.normalizedBaseUrl,
+      );
   }
 
   static String _buildHtml(EasySupportConfig config) {
