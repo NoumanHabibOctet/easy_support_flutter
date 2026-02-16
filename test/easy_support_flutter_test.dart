@@ -11,6 +11,7 @@ void main() {
 
     expect(config.sdkScriptUrl, 'https://widget.example.com/widget/sdk.js');
     expect(config.normalizedBaseUrl, 'https://api.example.com/');
+    expect(config.normalizedApiBaseUrl, 'https://api.example.com/api/v1');
   });
 
   test('creates js options with required values', () {
@@ -26,8 +27,24 @@ void main() {
 
     expect(options['channelToken'], 'api_test_123');
     expect(options['baseUrl'], 'https://api.example.com/');
+    expect(options['apiBaseUrl'], 'https://api.example.com/api/v1');
     expect(options['autoOpen'], false);
     expect(options['isEmojiEnabled'], false);
     expect(options['isMediaEnabled'], true);
+  });
+
+  test('uses explicit apiBaseUrl when provided', () {
+    const config = EasySupportConfig(
+      sdkBaseUrl: 'https://widget.example.com',
+      baseUrl: 'https://socket.example.com',
+      apiBaseUrl: 'https://backend.example.com/api/v1/',
+      channelToken: 'api_test_123',
+    );
+
+    expect(config.normalizedApiBaseUrl, 'https://backend.example.com/api/v1');
+    expect(
+      config.toJavaScriptOptions()['apiBaseUrl'],
+      'https://backend.example.com/api/v1',
+    );
   });
 }

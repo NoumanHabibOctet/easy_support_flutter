@@ -23,8 +23,9 @@ import 'package:easy_support_flutter/easy_support_flutter.dart';
 
 EasySupport.init(
   const EasySupportConfig(
-    sdkBaseUrl: 'https://widget.your-domain.com',
-    baseUrl: 'https://api.your-domain.com',
+    sdkBaseUrl: 'https://easysupport-portal.onevision.io',
+    baseUrl: 'https://easysupport-portal.onevision.io',
+    apiBaseUrl: 'https://easysupport-portal.onevision.io/api/v1',
     channelToken: 'api_xxx',
     autoOpen: true,
   ),
@@ -38,8 +39,9 @@ await EasySupport.open(context);
 ```dart
 EasySupportView(
   config: const EasySupportConfig(
-    sdkBaseUrl: 'https://widget.your-domain.com',
-    baseUrl: 'https://api.your-domain.com',
+    sdkBaseUrl: 'https://easysupport-portal.onevision.io',
+    baseUrl: 'https://easysupport-portal.onevision.io',
+    apiBaseUrl: 'https://easysupport-portal.onevision.io/api/v1',
     channelToken: 'api_xxx',
   ),
 )
@@ -47,6 +49,7 @@ EasySupportView(
 
 ## Notes
 
+- `apiBaseUrl` defaults to `${baseUrl}/api/v1` if not provided.
 - Use public HTTPS URLs in production.
 - Do not expose secret server keys in client config.
 - Your backend must allow calls from app webview clients.

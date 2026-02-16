@@ -5,6 +5,7 @@ class EasySupportConfig {
     required this.sdkBaseUrl,
     required this.baseUrl,
     required this.channelToken,
+    this.apiBaseUrl,
     this.channelKey,
     this.widgetTitle,
     this.autoOpen = true,
@@ -16,6 +17,7 @@ class EasySupportConfig {
   final String sdkBaseUrl;
   final String baseUrl;
   final String channelToken;
+  final String? apiBaseUrl;
   final String? channelKey;
   final String? widgetTitle;
   final bool autoOpen;
@@ -28,10 +30,19 @@ class EasySupportConfig {
 
   String get normalizedBaseUrl => '${_stripTrailingSlashes(baseUrl)}/';
 
+  String get normalizedApiBaseUrl {
+    final value = apiBaseUrl;
+    if (value == null || value.trim().isEmpty) {
+      return '${_stripTrailingSlashes(baseUrl)}/api/v1';
+    }
+    return _stripTrailingSlashes(value);
+  }
+
   Map<String, dynamic> toJavaScriptOptions() {
     return <String, dynamic>{
       'channelToken': channelToken,
       'baseUrl': normalizedBaseUrl,
+      'apiBaseUrl': normalizedApiBaseUrl,
       'autoOpen': autoOpen,
       'isEmojiEnabled': isEmojiEnabled,
       'isMediaEnabled': isMediaEnabled,
@@ -49,6 +60,7 @@ class EasySupportConfig {
     String? sdkBaseUrl,
     String? baseUrl,
     String? channelToken,
+    String? apiBaseUrl,
     String? channelKey,
     String? widgetTitle,
     bool? autoOpen,
@@ -60,6 +72,7 @@ class EasySupportConfig {
       sdkBaseUrl: sdkBaseUrl ?? this.sdkBaseUrl,
       baseUrl: baseUrl ?? this.baseUrl,
       channelToken: channelToken ?? this.channelToken,
+      apiBaseUrl: apiBaseUrl ?? this.apiBaseUrl,
       channelKey: channelKey ?? this.channelKey,
       widgetTitle: widgetTitle ?? this.widgetTitle,
       autoOpen: autoOpen ?? this.autoOpen,
