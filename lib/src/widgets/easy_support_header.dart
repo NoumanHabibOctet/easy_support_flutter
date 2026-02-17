@@ -21,7 +21,9 @@ class EasySupportHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final closeBackground =
-        EasySupportColorUtils.blend(primaryColor, Colors.white, 0.76);
+        EasySupportColorUtils.blend(primaryColor, Colors.white, 0.7);
+    final closeIconColor =
+        EasySupportColorUtils.blend(onPrimaryColor, Colors.white, 0.12);
     final shape = isFullScreen
         ? const BorderRadius.vertical(bottom: Radius.circular(26))
         : const BorderRadius.vertical(
@@ -72,9 +74,13 @@ class EasySupportHeader extends StatelessWidget {
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: onClose,
-              child: const Padding(
-                padding: EdgeInsets.all(14),
-                child: Icon(Icons.close_rounded, color: Colors.white, size: 30),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Icon(
+                  Icons.close_rounded,
+                  color: closeIconColor,
+                  size: 28,
+                ),
               ),
             ),
           ),

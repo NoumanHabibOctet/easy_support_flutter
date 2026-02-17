@@ -10,7 +10,7 @@ class EasySupportActionBar extends StatelessWidget {
     required this.bottomPadding,
   });
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String label;
   final Color actionColor;
   final Color onActionColor;
@@ -18,6 +18,9 @@ class EasySupportActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final disabledBackground = actionColor.withOpacity(0.45);
+    final disabledForeground = onActionColor.withOpacity(0.85);
+
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding + 14),
       decoration: BoxDecoration(
@@ -37,6 +40,8 @@ class EasySupportActionBar extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: actionColor,
             foregroundColor: onActionColor,
+            disabledBackgroundColor: disabledBackground,
+            disabledForegroundColor: disabledForeground,
             elevation: 0,
             minimumSize: const Size.fromHeight(56),
             shape: RoundedRectangleBorder(

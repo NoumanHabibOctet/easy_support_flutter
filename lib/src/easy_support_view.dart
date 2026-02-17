@@ -38,7 +38,18 @@ class _EasySupportViewState extends State<EasySupportView> {
   final TextEditingController _phoneController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_onFormChanged);
+    _nameController.addListener(_onFormChanged);
+    _phoneController.addListener(_onFormChanged);
+  }
+
+  @override
   void dispose() {
+    _emailController.removeListener(_onFormChanged);
+    _nameController.removeListener(_onFormChanged);
+    _phoneController.removeListener(_onFormChanged);
     _emailController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
@@ -67,8 +78,8 @@ class _EasySupportViewState extends State<EasySupportView> {
         channel?.isGreetingEnabled == true ? channel?.greetingMessage : null;
     final form = channel?.chatForm;
     final showForm = channel?.hasActiveForm == true && form != null;
-    final showFeedback = channel?.isFeedbackEnabled == true &&
-        (channel?.feedbackMessage?.trim().isNotEmpty ?? false);
+    final canStartConversation =
+        !showForm || _areRequiredFieldsFilled(form: form);
 
     final content = DecoratedBox(
       decoration: const BoxDecoration(
@@ -118,19 +129,14 @@ class _EasySupportViewState extends State<EasySupportView> {
                       primaryColor: primaryColor,
                     ),
                   ],
-                  if (showFeedback) ...[
-                    const SizedBox(height: 14),
-                    _buildFeedbackPill(
-                      channel!.feedbackMessage!,
-                      primaryColor: primaryColor,
-                    ),
-                  ],
                 ],
               ),
             ),
           ),
           EasySupportActionBar(
-            onPressed: () => _onStartConversationPressed(showForm: showForm),
+            onPressed: canStartConversation
+                ? () => _onStartConversationPressed(showForm: showForm)
+                : null,
             label: 'Start Conversation',
             actionColor: actionButtonColor,
             onActionColor: EasySupportColorUtils.onColor(actionButtonColor),
@@ -147,37 +153,6 @@ class _EasySupportViewState extends State<EasySupportView> {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       child: content,
-    );
-  }
-
-  Widget _buildFeedbackPill(String message, {required Color primaryColor}) {
-    final starColor =
-        EasySupportColorUtils.blend(primaryColor, Colors.white, 0.2);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.star_rounded, color: starColor, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF4B5563),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -262,6 +237,41 @@ class _EasySupportViewState extends State<EasySupportView> {
       }
     }
     Navigator.of(context).maybePop();
+  }
+
+  bool _areRequiredFieldsFilled({
+    required EasySupportChatFormConfiguration? form,
+  }) {
+    if (form == null) {
+      return true;
+    }
+
+    if (form.isEmailEnabled == true &&
+        form.isEmailRequired == true &&
+        _emailController.text.trim().isEmpty) {
+      return false;
+    }
+
+    if (form.isNameEnabled == true &&
+        form.isNameRequired == true &&
+        _nameController.text.trim().isEmpty) {
+      return false;
+    }
+
+    if (form.isPhoneEnabled == true &&
+        form.isPhoneRequired == true &&
+        _phoneController.text.trim().isEmpty) {
+      return false;
+    }
+
+    return true;
+  }
+
+  void _onFormChanged() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
   }
 
   static bool _isValidEmail(String email) {
