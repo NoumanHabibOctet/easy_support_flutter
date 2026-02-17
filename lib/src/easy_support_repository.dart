@@ -56,10 +56,16 @@ class EasySupportDioRepository implements EasySupportRepository {
       }
       return channelConfiguration;
     } on DioException catch (error) {
+      final isNetworkError =
+          error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout;
       throw EasySupportApiException(
         message:
             error.message ?? 'EasySupport init request failed for ${uri.path}',
         statusCode: error.response?.statusCode ?? -1,
+        isNetworkError: isNetworkError,
       );
     }
   }
@@ -69,10 +75,12 @@ class EasySupportApiException implements Exception {
   const EasySupportApiException({
     required this.message,
     required this.statusCode,
+    this.isNetworkError = false,
   });
 
   final String message;
   final int statusCode;
+  final bool isNetworkError;
 
   @override
   String toString() => '$message: HTTP $statusCode';

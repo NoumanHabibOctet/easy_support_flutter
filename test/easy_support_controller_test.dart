@@ -28,6 +28,19 @@ void main() {
     await expectLater(controller.initialize(config), throwsException);
     expect(controller.value.status, EasySupportInitStatus.error);
   });
+
+  test('controller retries on network error and succeeds automatically', () async {
+    final controller = EasySupportController(
+      repository: _FakeNetworkThenSuccessRepository(),
+      retryScheduler: EasySupportRetryScheduler(
+        interval: const Duration(milliseconds: 10),
+      ),
+    );
+
+    final channelConfiguration = await controller.initialize(config);
+    expect(controller.value.status, EasySupportInitStatus.ready);
+    expect(channelConfiguration.token, 'api_test_123');
+  });
 }
 
 class _FakeSuccessRepository implements EasySupportRepository {
@@ -53,6 +66,29 @@ class _FakeFailureRepository implements EasySupportRepository {
     throw const EasySupportApiException(
       message: 'GET failed',
       statusCode: 500,
+    );
+  }
+}
+
+class _FakeNetworkThenSuccessRepository implements EasySupportRepository {
+  int _count = 0;
+
+  @override
+  Future<EasySupportChannelConfiguration> fetchChannelKey(
+    EasySupportConfig config,
+  ) async {
+    _count += 1;
+    if (_count == 1) {
+      throw const EasySupportApiException(
+        message: 'No internet',
+        statusCode: -1,
+        isNetworkError: true,
+      );
+    }
+
+    return const EasySupportChannelConfiguration(
+      name: "Noman's Channel",
+      token: 'api_test_123',
     );
   }
 }
