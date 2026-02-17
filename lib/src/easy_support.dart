@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'easy_support_controller.dart';
 import 'easy_support_repository.dart';
+import 'easy_support_screen.dart';
 import 'easy_support_view.dart';
 import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_config.dart';
@@ -53,22 +54,18 @@ class EasySupport {
       return;
     }
 
-    await showModalBottomSheet<void>(
-      context: navigator.context,
-      isScrollControlled: true,
-      useSafeArea: useSafeArea,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return Container(
-          color: Colors.transparent,
-          height: MediaQuery.of(sheetContext).size.height * heightFactor,
-          child: EasySupportView(
+    await navigator.push<void>(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (routeContext) {
+          return EasySupportScreen(
             config: EasySupport.resolvedConfig,
             channelConfiguration: resolvedChannelConfiguration,
+            useSafeArea: useSafeArea,
             onError: onError,
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

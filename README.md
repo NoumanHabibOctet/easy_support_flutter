@@ -5,7 +5,7 @@ A Flutter package for initializing and opening Easy Support.
 ## What this package gives you
 
 - `EasySupport.init(config)` to set SDK config once
-- `EasySupport.open(context)` to open chat in a bottom sheet
+- `EasySupport.open(context)` to open chat in a full-screen page
 - `EasySupportView(config: ...)` if you want to embed the widget directly
 
 ## Install

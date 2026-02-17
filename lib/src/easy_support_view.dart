@@ -11,11 +11,13 @@ class EasySupportView extends StatefulWidget {
     super.key,
     required this.config,
     this.channelConfiguration,
+    this.isFullScreen = false,
     this.onError,
   });
 
   final EasySupportConfig config;
   final EasySupportChannelConfiguration? channelConfiguration;
+  final bool isFullScreen;
   final EasySupportErrorCallback? onError;
 
   @override
@@ -64,159 +66,167 @@ class _EasySupportViewState extends State<EasySupportView> {
         channel?.isFeedbackEnabled == true &&
         (channel?.feedbackMessage?.trim().isNotEmpty ?? false);
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-      child: Material(
-        color: screenBackgroundColor,
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(30),
-                ),
-              ),
-              padding: const EdgeInsets.fromLTRB(24, 24, 20, 24),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                      ),
+    final content = Material(
+      color: screenBackgroundColor,
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: primaryColor,
+              borderRadius: widget.isFullScreen
+                  ? null
+                  : const BorderRadius.vertical(
+                      top: Radius.circular(30),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Material(
-                    color: closeButtonColor,
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () => Navigator.of(context).maybePop(),
-                      child: const Padding(
-                        padding: EdgeInsets.all(14),
-                        child: Icon(Icons.close, color: Colors.white, size: 30),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(28, 18, 28, 20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
-                    const Text('💬', style: TextStyle(fontSize: 96)),
-                    const SizedBox(height: 18),
-                    Text(
-                      heading,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 27,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1F2937),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      tagline,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        height: 1.45,
-                        color: Color(0xFF6B7280),
-                      ),
-                    ),
-                    if (greetingMessage != null &&
-                        greetingMessage.trim().isNotEmpty) ...[
-                      const SizedBox(height: 18),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: Text(
-                          greetingMessage,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF4B5563),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                    if (showForm && form != null) ...[
-                      const SizedBox(height: 24),
-                      _buildFormCard(
-                        form: form,
-                        primaryColor: primaryColor,
-                      ),
-                    ],
-                    if (showFeedback) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        channel!.feedbackMessage!,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF4B5563),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            Container(
-              color: screenBackgroundColor,
-              padding: EdgeInsets.fromLTRB(
-                28,
-                6,
-                28,
-                MediaQuery.of(context).padding.bottom + 18,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () =>
-                      _onStartConversationPressed(showForm: showForm),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: actionButtonColor,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: actionButtonColor,
-                    disabledForegroundColor: Colors.white,
-                    elevation: 0,
-                    minimumSize: const Size.fromHeight(56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(32),
-                    ),
-                  ),
-                  child: const Text(
-                    'Start Conversation',
-                    style: TextStyle(
-                      fontSize: 15,
+            padding: const EdgeInsets.fromLTRB(24, 24, 20, 24),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
+                const SizedBox(width: 12),
+                Material(
+                  color: closeButtonColor,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => Navigator.of(context).maybePop(),
+                    child: const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: Icon(Icons.close, color: Colors.white, size: 30),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(28, 18, 28, 20),
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  const Text('💬', style: TextStyle(fontSize: 96)),
+                  const SizedBox(height: 18),
+                  Text(
+                    heading,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 27,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    tagline,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      height: 1.45,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  if (greetingMessage != null &&
+                      greetingMessage.trim().isNotEmpty) ...[
+                    const SizedBox(height: 18),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Text(
+                        greetingMessage,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF4B5563),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (showForm && form != null) ...[
+                    const SizedBox(height: 24),
+                    _buildFormCard(
+                      form: form,
+                      primaryColor: primaryColor,
+                    ),
+                  ],
+                  if (showFeedback) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      channel!.feedbackMessage!,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF4B5563),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          Container(
+            color: screenBackgroundColor,
+            padding: EdgeInsets.fromLTRB(
+              28,
+              6,
+              28,
+              MediaQuery.of(context).padding.bottom + 18,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () =>
+                    _onStartConversationPressed(showForm: showForm),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: actionButtonColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: actionButtonColor,
+                  disabledForegroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size.fromHeight(56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                ),
+                child: const Text(
+                  'Start Conversation',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+
+    if (widget.isFullScreen) {
+      return content;
+    }
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+      child: content,
     );
   }
 
