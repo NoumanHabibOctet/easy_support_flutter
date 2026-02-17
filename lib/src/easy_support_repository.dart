@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 
-import 'easy_support_config.dart';
+import 'models/easy_support_channel_configuration.dart';
+import 'models/easy_support_config.dart';
 
 abstract class EasySupportRepository {
-  Future<void> fetchChannelKey(EasySupportConfig config);
+  Future<EasySupportChannelConfiguration> fetchChannelKey(
+    EasySupportConfig config,
+  );
 }
 
 class EasySupportDioRepository implements EasySupportRepository {
@@ -12,7 +15,9 @@ class EasySupportDioRepository implements EasySupportRepository {
   final Dio _dio;
 
   @override
-  Future<void> fetchChannelKey(EasySupportConfig config) async {
+  Future<EasySupportChannelConfiguration> fetchChannelKey(
+    EasySupportConfig config,
+  ) async {
     final uri = Uri.parse('${config.normalizedApiBaseUrl}/channel/key');
 
     try {
@@ -32,16 +37,28 @@ class EasySupportDioRepository implements EasySupportRepository {
         );
       }
 
-      final body = response.data;
-      if (body is Map && body['success'] == false) {
+      final rawBody = response.data;
+      if (rawBody is! Map) {
         throw EasySupportApiException(
           message: 'EasySupport init failed for ${uri.path}',
           statusCode: statusCode,
         );
       }
+
+      final body = Map<String, dynamic>.from(rawBody);
+      final parsedResponse = EasySupportChannelKeyResponse.fromJson(body);
+      final channelConfiguration = parsedResponse.data;
+      if (!parsedResponse.success || channelConfiguration == null) {
+        throw EasySupportApiException(
+          message: 'EasySupport init failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+      return channelConfiguration;
     } on DioException catch (error) {
       throw EasySupportApiException(
-        message: error.message ?? 'EasySupport init request failed for ${uri.path}',
+        message:
+            error.message ?? 'EasySupport init request failed for ${uri.path}',
         statusCode: error.response?.statusCode ?? -1,
       );
     }

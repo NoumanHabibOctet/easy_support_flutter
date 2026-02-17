@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'easy_support_config.dart';
+import 'models/easy_support_channel_configuration.dart';
+import 'models/easy_support_config.dart';
 import 'easy_support_repository.dart';
 
 enum EasySupportInitStatus { initial, loading, ready, error }
@@ -10,6 +11,7 @@ class EasySupportInitState {
   const EasySupportInitState._({
     required this.status,
     this.error,
+    this.channelConfiguration,
   });
 
   const EasySupportInitState.initial()
@@ -21,11 +23,19 @@ class EasySupportInitState {
   const EasySupportInitState.ready()
       : this._(status: EasySupportInitStatus.ready);
 
+  const EasySupportInitState.readyWith(
+    EasySupportChannelConfiguration channelConfiguration,
+  ) : this._(
+         status: EasySupportInitStatus.ready,
+         channelConfiguration: channelConfiguration,
+       );
+
   const EasySupportInitState.error(Object error)
       : this._(status: EasySupportInitStatus.error, error: error);
 
   final EasySupportInitStatus status;
   final Object? error;
+  final EasySupportChannelConfiguration? channelConfiguration;
 
   bool get isReady => status == EasySupportInitStatus.ready;
 }
@@ -36,11 +46,14 @@ class EasySupportController extends ValueNotifier<EasySupportInitState> {
         super(const EasySupportInitState.initial());
 
   final EasySupportRepository _repository;
-  Future<void>? _inFlightInitialization;
+  Future<EasySupportChannelConfiguration>? _inFlightInitialization;
 
-  Future<void> initialize(EasySupportConfig config) {
-    if (value.isReady) {
-      return Future<void>.value();
+  Future<EasySupportChannelConfiguration> initialize(EasySupportConfig config) {
+    final readyChannelConfiguration = value.channelConfiguration;
+    if (value.isReady && readyChannelConfiguration != null) {
+      return Future<EasySupportChannelConfiguration>.value(
+        readyChannelConfiguration,
+      );
     }
 
     final inFlightInitialization = _inFlightInitialization;
@@ -49,8 +62,11 @@ class EasySupportController extends ValueNotifier<EasySupportInitState> {
     }
 
     value = const EasySupportInitState.loading();
-    final initialization = _repository.fetchChannelKey(config).then((_) {
-      value = const EasySupportInitState.ready();
+    final initialization = _repository.fetchChannelKey(config).then((
+      channelConfiguration,
+    ) {
+      value = EasySupportInitState.readyWith(channelConfiguration);
+      return channelConfiguration;
     }).catchError((Object error, StackTrace stackTrace) {
       value = EasySupportInitState.error(error);
       _inFlightInitialization = null;

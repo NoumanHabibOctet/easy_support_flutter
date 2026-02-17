@@ -2,7 +2,6 @@ import 'dart:convert';
 
 class EasySupportConfig {
   const EasySupportConfig({
-    required this.sdkBaseUrl,
     required this.baseUrl,
     required this.channelToken,
     this.apiBaseUrl,
@@ -14,7 +13,6 @@ class EasySupportConfig {
     this.additionalHeaders = const <String, String>{},
   }) : assert(channelToken != '', 'channelToken cannot be empty.');
 
-  final String sdkBaseUrl;
   final String baseUrl;
   final String channelToken;
   final String? apiBaseUrl;
@@ -24,14 +22,6 @@ class EasySupportConfig {
   final bool isEmojiEnabled;
   final bool isMediaEnabled;
   final Map<String, String> additionalHeaders;
-
-  String get sdkScriptUrl {
-    final normalized = sdkBaseUrl.trim();
-    if (_isDirectSdkScriptUrl(normalized)) {
-      return normalized;
-    }
-    return '${_stripTrailingSlashes(normalized)}/widget/sdk.js';
-  }
 
   String get normalizedBaseUrl => '${_stripTrailingSlashes(baseUrl)}/';
 
@@ -68,7 +58,6 @@ class EasySupportConfig {
   String toJavaScriptOptionsJson() => jsonEncode(toJavaScriptOptions());
 
   EasySupportConfig copyWith({
-    String? sdkBaseUrl,
     String? baseUrl,
     String? channelToken,
     String? apiBaseUrl,
@@ -80,7 +69,6 @@ class EasySupportConfig {
     Map<String, String>? additionalHeaders,
   }) {
     return EasySupportConfig(
-      sdkBaseUrl: sdkBaseUrl ?? this.sdkBaseUrl,
       baseUrl: baseUrl ?? this.baseUrl,
       channelToken: channelToken ?? this.channelToken,
       apiBaseUrl: apiBaseUrl ?? this.apiBaseUrl,
@@ -91,12 +79,6 @@ class EasySupportConfig {
       isMediaEnabled: isMediaEnabled ?? this.isMediaEnabled,
       additionalHeaders: additionalHeaders ?? this.additionalHeaders,
     );
-  }
-
-  static bool _isDirectSdkScriptUrl(String value) {
-    final uri = Uri.tryParse(value);
-    final path = uri?.path.toLowerCase() ?? value.toLowerCase();
-    return path.endsWith('/widget/sdk.js') || path.endsWith('.js');
   }
 
   static String _stripTrailingSlashes(String value) {

@@ -2,31 +2,18 @@ import 'package:easy_support_flutter/easy_support_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('normalizes URLs for sdk script and baseUrl', () {
+  test('normalizes baseUrl and apiBaseUrl', () {
     const config = EasySupportConfig(
-      sdkBaseUrl: 'https://widget.example.com///',
-      baseUrl: 'https://api.example.com',
+      baseUrl: 'https://api.example.com///',
       channelToken: 'api_test_123',
     );
 
-    expect(config.sdkScriptUrl, 'https://widget.example.com/widget/sdk.js');
     expect(config.normalizedBaseUrl, 'https://api.example.com/');
     expect(config.normalizedApiBaseUrl, 'https://api.example.com/api/v1');
   });
 
-  test('accepts direct sdk script URL', () {
-    const config = EasySupportConfig(
-      sdkBaseUrl: 'https://widget.example.com/widget/sdk.js',
-      baseUrl: 'https://api.example.com',
-      channelToken: 'api_test_123',
-    );
-
-    expect(config.sdkScriptUrl, 'https://widget.example.com/widget/sdk.js');
-  });
-
   test('creates js options with required values', () {
     const config = EasySupportConfig(
-      sdkBaseUrl: 'https://widget.example.com',
       baseUrl: 'https://api.example.com',
       channelToken: 'api_test_123',
       autoOpen: false,
@@ -48,7 +35,6 @@ void main() {
 
   test('always injects channel_key header from channelToken', () {
     const config = EasySupportConfig(
-      sdkBaseUrl: 'https://widget.example.com',
       baseUrl: 'https://api.example.com',
       channelToken: 'api_test_123',
       additionalHeaders: <String, String>{
@@ -65,7 +51,6 @@ void main() {
 
   test('uses explicit apiBaseUrl when provided', () {
     const config = EasySupportConfig(
-      sdkBaseUrl: 'https://widget.example.com',
       baseUrl: 'https://socket.example.com',
       apiBaseUrl: 'https://backend.example.com/api/v1/',
       channelToken: 'api_test_123',
@@ -76,5 +61,37 @@ void main() {
       config.toJavaScriptOptions()['apiBaseUrl'],
       'https://backend.example.com/api/v1',
     );
+  });
+
+  test('parses channel response and merges returned configuration', () {
+    final response = EasySupportChannelKeyResponse.fromJson(<String, dynamic>{
+      'success': true,
+      'data': <String, dynamic>{
+        'name': "Noman's Channel",
+        'welcome_heading': 'Hi there ! How can we help you ',
+        'is_emoji_enabled': false,
+        'is_media_enabled': false,
+        'token': 'api_nat1ht02fmlq45lps',
+      },
+    });
+
+    const inputConfig = EasySupportConfig(
+      baseUrl: 'https://api.example.com',
+      channelToken: 'api_nat1ht02fmlq45lps',
+      widgetTitle: 'Default title',
+      isEmojiEnabled: true,
+      isMediaEnabled: true,
+    );
+
+    final mergedConfig = inputConfig.mergeWithChannelConfiguration(
+      response.data!,
+    );
+
+    expect(response.success, true);
+    expect(response.data?.name, "Noman's Channel");
+    expect(response.data?.token, 'api_nat1ht02fmlq45lps');
+    expect(mergedConfig.widgetTitle, 'Hi there ! How can we help you ');
+    expect(mergedConfig.isEmojiEnabled, false);
+    expect(mergedConfig.isMediaEnabled, false);
   });
 }

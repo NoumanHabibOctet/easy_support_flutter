@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'easy_support_controller.dart';
-import 'easy_support_config.dart';
+import 'models/easy_support_channel_configuration.dart';
+import 'models/easy_support_config.dart';
 import 'easy_support_repository.dart';
 
 typedef EasySupportErrorCallback = void Function(WebResourceError error);
@@ -19,6 +20,8 @@ class EasySupport {
   static bool get isInitialized => _config != null;
   static bool get isReady => _controller.value.isReady;
   static EasySupportInitState get state => _controller.value;
+  static EasySupportChannelConfiguration? get channelConfiguration =>
+      _controller.value.channelConfiguration;
   static ValueListenable<EasySupportInitState> get stateListenable =>
       _controller;
 
@@ -33,7 +36,8 @@ class EasySupport {
   static Future<void> init(EasySupportConfig config) async {
     _config = config;
     _controller.reset();
-    await _ensureReady();
+    final resolvedChannelConfiguration = await _ensureReady();
+    _config = config.mergeWithChannelConfiguration(resolvedChannelConfiguration);
   }
 
   static Future<void> open(
@@ -63,7 +67,7 @@ class EasySupport {
           color: Colors.transparent,
           height: MediaQuery.of(sheetContext).size.height * heightFactor,
           child: EasySupportView(
-            config: EasySupport.config,
+            config: EasySupport.resolvedConfig,
             onError: onError,
           ),
         );
@@ -71,10 +75,20 @@ class EasySupport {
     );
   }
 
-  static Future<void> waitUntilReady() => _ensureReady();
+  static Future<void> waitUntilReady() async {
+    await _ensureReady();
+  }
 
-  static Future<void> _ensureReady() async {
-    await _controller.initialize(config);
+  static EasySupportConfig get resolvedConfig {
+    final channel = channelConfiguration;
+    if (channel == null) {
+      return config;
+    }
+    return config.mergeWithChannelConfiguration(channel);
+  }
+
+  static Future<EasySupportChannelConfiguration> _ensureReady() async {
+    return _controller.initialize(config);
   }
 }
 
@@ -96,17 +110,6 @@ class _EasySupportViewState extends State<EasySupportView> {
   @override
   void initState() {
     super.initState();
-    print(
-        'Easy Support initialized with config: ${widget.config.channelToken}');
-  }
-
-  @override
-  void didUpdateWidget(covariant EasySupportView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.config != widget.config) {
-      print(
-          'Easy Support initialized with config2: ${widget.config.channelToken}');
-    }
   }
 
   @override

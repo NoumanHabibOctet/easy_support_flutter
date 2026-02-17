@@ -1,6 +1,6 @@
 # easy_support_flutter
 
-A Flutter SDK wrapper for your existing web support widget (`/widget/sdk.js`).
+A Flutter package for initializing and opening Easy Support.
 
 ## What this package gives you
 
@@ -23,7 +23,6 @@ import 'package:easy_support_flutter/easy_support_flutter.dart';
 
 await EasySupport.init(
   const EasySupportConfig(
-    sdkBaseUrl: 'https://easysupport-portal.onevision.io',
     baseUrl: 'https://easysupport-portal.onevision.io',
     apiBaseUrl: 'https://easysupport-portal.onevision.io/api/v1',
     channelToken: 'api_xxx',
@@ -34,19 +33,11 @@ await EasySupport.init(
 await EasySupport.open(context);
 ```
 
-## Optional direct sdk.js URL
-
-You can pass either of these:
-
-- Domain/base URL: `https://easysupport-portal.onevision.io`
-- Direct script URL: `https://easysupport-portal.onevision.io/widget/sdk.js`
-
 ## Embed directly in a screen
 
 ```dart
 EasySupportView(
   config: const EasySupportConfig(
-    sdkBaseUrl: 'https://easysupport-portal.onevision.io',
     baseUrl: 'https://easysupport-portal.onevision.io',
     apiBaseUrl: 'https://easysupport-portal.onevision.io/api/v1',
     channelToken: 'api_xxx',
@@ -60,6 +51,8 @@ EasySupportView(
 - During `EasySupport.init`, the SDK calls `${apiBaseUrl}/channel/key` first.
 - All widget API calls include `channel_key: channelToken` in headers.
 - Init state is available via `EasySupport.state` / `EasySupport.stateListenable`.
+- API response data is available via `EasySupport.channelConfiguration`.
+- Merged runtime config (input params + API response) is available via `EasySupport.resolvedConfig`.
 - Network workflow is handled by repository (`EasySupportRepository` -> `EasySupportDioRepository`) using `GET /channel/key`.
 - Use public HTTPS URLs in production.
 - Do not expose secret server keys in client config.

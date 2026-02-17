@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const config = EasySupportConfig(
-    sdkBaseUrl: 'https://widget.example.com',
     baseUrl: 'https://api.example.com',
     channelToken: 'api_test_123',
   );
@@ -14,8 +13,10 @@ void main() {
     );
 
     expect(controller.value.status, EasySupportInitStatus.initial);
-    await controller.initialize(config);
+    final channelConfiguration = await controller.initialize(config);
     expect(controller.value.status, EasySupportInitStatus.ready);
+    expect(channelConfiguration.token, 'api_test_123');
+    expect(controller.value.channelConfiguration?.name, "Noman's Channel");
   });
 
   test('controller moves to error when repository GET fails', () async {
@@ -31,12 +32,24 @@ void main() {
 
 class _FakeSuccessRepository implements EasySupportRepository {
   @override
-  Future<void> fetchChannelKey(EasySupportConfig config) async {}
+  Future<EasySupportChannelConfiguration> fetchChannelKey(
+    EasySupportConfig config,
+  ) async {
+    return const EasySupportChannelConfiguration(
+      name: "Noman's Channel",
+      token: 'api_test_123',
+      isEmojiEnabled: false,
+      isMediaEnabled: false,
+      welcomeHeading: 'Hi there ! How can we help you ',
+    );
+  }
 }
 
 class _FakeFailureRepository implements EasySupportRepository {
   @override
-  Future<void> fetchChannelKey(EasySupportConfig config) async {
+  Future<EasySupportChannelConfiguration> fetchChannelKey(
+    EasySupportConfig config,
+  ) async {
     throw const EasySupportApiException(
       message: 'GET failed',
       statusCode: 500,
