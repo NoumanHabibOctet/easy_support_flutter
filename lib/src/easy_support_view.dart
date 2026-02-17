@@ -3,6 +3,13 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_config.dart';
+import 'widgets/easy_support_action_bar.dart';
+import 'widgets/easy_support_color_utils.dart';
+import 'widgets/easy_support_form_card.dart';
+import 'widgets/easy_support_header.dart';
+import 'widgets/easy_support_hero_section.dart';
+import 'widgets/easy_support_input_field.dart';
+import 'widgets/easy_support_message_card.dart';
 
 typedef EasySupportErrorCallback = void Function(WebResourceError error);
 
@@ -41,180 +48,93 @@ class _EasySupportViewState extends State<EasySupportView> {
   @override
   Widget build(BuildContext context) {
     final channel = widget.channelConfiguration;
-    final primaryColor = _parseHexColor(
+    final primaryColor = EasySupportColorUtils.parseHexColor(
       channel?.widgetColor,
       fallback: const Color(0xFFF50A0A),
     );
-    final closeButtonColor = _blend(Colors.white, primaryColor, 0.25);
-    final actionButtonColor = _blend(Colors.white, primaryColor, 0.45);
-    const screenBackgroundColor = Color(0xFFF2F3F5);
+    final onPrimaryColor = EasySupportColorUtils.onColor(primaryColor);
+    final actionButtonColor =
+        EasySupportColorUtils.blend(primaryColor, Colors.white, 0.12);
+
     final title = channel?.name ?? 'Support';
-    final heading =
-        channel?.welcomeHeading ??
+    final heading = channel?.welcomeHeading ??
         widget.config.widgetTitle ??
         'Hi there ! How can we help you';
-    final tagline =
-        channel?.welcomeTagline ??
+    final tagline = channel?.welcomeTagline ??
         channel?.details ??
         'We make it simple to connect with us.';
-    final greetingMessage = channel?.isGreetingEnabled == true
-        ? channel?.greetingMessage
-        : null;
+    final greetingMessage =
+        channel?.isGreetingEnabled == true ? channel?.greetingMessage : null;
     final form = channel?.chatForm;
-    final showForm = channel?.hasActiveForm == true;
-    final showFeedback =
-        channel?.isFeedbackEnabled == true &&
+    final showForm = channel?.hasActiveForm == true && form != null;
+    final showFeedback = channel?.isFeedbackEnabled == true &&
         (channel?.feedbackMessage?.trim().isNotEmpty ?? false);
 
-    final content = Material(
-      color: screenBackgroundColor,
+    final content = DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF7F8FC),
+            Color(0xFFF2F4F8),
+          ],
+        ),
+      ),
       child: Column(
         children: [
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: primaryColor,
-              borderRadius: widget.isFullScreen
-                  ? null
-                  : const BorderRadius.vertical(
-                      top: Radius.circular(30),
-                    ),
-            ),
-            padding: const EdgeInsets.fromLTRB(24, 24, 20, 24),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Material(
-                  color: closeButtonColor,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () => Navigator.of(context).maybePop(),
-                    child: const Padding(
-                      padding: EdgeInsets.all(14),
-                      child: Icon(Icons.close, color: Colors.white, size: 30),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          EasySupportHeader(
+            title: title,
+            primaryColor: primaryColor,
+            onPrimaryColor: onPrimaryColor,
+            isFullScreen: widget.isFullScreen,
+            onClose: () => Navigator.of(context).maybePop(),
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(28, 18, 28, 20),
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 14),
               child: Column(
                 children: [
-                  const SizedBox(height: 8),
-                  const Text('💬', style: TextStyle(fontSize: 96)),
-                  const SizedBox(height: 18),
-                  Text(
-                    heading,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 27,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1F2937),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    tagline,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      height: 1.45,
-                      color: Color(0xFF6B7280),
-                    ),
+                  EasySupportHeroSection(
+                    heading: heading,
+                    tagline: tagline,
+                    primaryColor: primaryColor,
                   ),
                   if (greetingMessage != null &&
                       greetingMessage.trim().isNotEmpty) ...[
                     const SizedBox(height: 18),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: Text(
-                        greetingMessage,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF4B5563),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                    EasySupportMessageCard(
+                      message: greetingMessage,
+                      primaryColor: primaryColor,
                     ),
                   ],
-                  if (showForm && form != null) ...[
-                    const SizedBox(height: 24),
+                  if (showForm) ...[
+                    const SizedBox(height: 18),
                     _buildFormCard(
                       form: form,
                       primaryColor: primaryColor,
                     ),
                   ],
                   if (showFeedback) ...[
-                    const SizedBox(height: 16),
-                    Text(
+                    const SizedBox(height: 14),
+                    _buildFeedbackPill(
                       channel!.feedbackMessage!,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF4B5563),
-                        fontWeight: FontWeight.w600,
-                      ),
+                      primaryColor: primaryColor,
                     ),
                   ],
                 ],
               ),
             ),
           ),
-          Container(
-            color: screenBackgroundColor,
-            padding: EdgeInsets.fromLTRB(
-              28,
-              6,
-              28,
-              MediaQuery.of(context).padding.bottom + 18,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () =>
-                    _onStartConversationPressed(showForm: showForm),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: actionButtonColor,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: actionButtonColor,
-                  disabledForegroundColor: Colors.white,
-                  elevation: 0,
-                  minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                ),
-                child: const Text(
-                  'Start Conversation',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
+          EasySupportActionBar(
+            onPressed: () => _onStartConversationPressed(showForm: showForm),
+            label: 'Start Conversation',
+            actionColor: actionButtonColor,
+            onActionColor: EasySupportColorUtils.onColor(actionButtonColor),
+            bottomPadding: MediaQuery.of(context).padding.bottom,
           ),
         ],
       ),
@@ -230,14 +150,44 @@ class _EasySupportViewState extends State<EasySupportView> {
     );
   }
 
+  Widget _buildFeedbackPill(String message, {required Color primaryColor}) {
+    final starColor =
+        EasySupportColorUtils.blend(primaryColor, Colors.white, 0.2);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.star_rounded, color: starColor, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4B5563),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFormCard({
     required EasySupportChatFormConfiguration form,
     required Color primaryColor,
   }) {
-    final formMessage = form.formMessage;
-    final enabledFields = <Widget>[
+    final fields = <Widget>[
       if (form.isEmailEnabled == true)
-        _buildFormField(
+        EasySupportInputField(
           controller: _emailController,
           label: form.emailFieldLabel ?? 'Email',
           placeholder: form.emailFieldPlaceholder ?? 'emailAddress',
@@ -245,15 +195,19 @@ class _EasySupportViewState extends State<EasySupportView> {
           keyboardType: TextInputType.emailAddress,
           validator: (value) {
             final text = value?.trim() ?? '';
+            final label = form.emailFieldLabel ?? 'Email';
             if (form.isEmailRequired == true && text.isEmpty) {
-              return '${form.emailFieldLabel ?? 'Email'} is required';
+              return '$label is required';
+            }
+            if (text.isNotEmpty && !_isValidEmail(text)) {
+              return 'Enter a valid email';
             }
             return null;
           },
           primaryColor: primaryColor,
         ),
       if (form.isNameEnabled == true)
-        _buildFormField(
+        EasySupportInputField(
           controller: _nameController,
           label: form.nameFieldLabel ?? 'Name',
           placeholder: form.nameFieldPlaceholder ?? 'fullName',
@@ -269,7 +223,7 @@ class _EasySupportViewState extends State<EasySupportView> {
           primaryColor: primaryColor,
         ),
       if (form.isPhoneEnabled == true)
-        _buildFormField(
+        EasySupportInputField(
           controller: _phoneController,
           label: form.phoneFieldLabel ?? 'Phone Number',
           placeholder: form.phoneFieldPlaceholder ?? 'phoneNumber',
@@ -277,8 +231,12 @@ class _EasySupportViewState extends State<EasySupportView> {
           keyboardType: TextInputType.phone,
           validator: (value) {
             final text = value?.trim() ?? '';
+            final label = form.phoneFieldLabel ?? 'Phone Number';
             if (form.isPhoneRequired == true && text.isEmpty) {
-              return '${form.phoneFieldLabel ?? 'Phone Number'} is required';
+              return '$label is required';
+            }
+            if (text.isNotEmpty && !_isLikelyPhone(text)) {
+              return 'Enter a valid phone number';
             }
             return null;
           },
@@ -286,111 +244,12 @@ class _EasySupportViewState extends State<EasySupportView> {
         ),
     ];
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            if (formMessage != null && formMessage.trim().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: Text(
-                  formMessage,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1F2937),
-                  ),
-                ),
-              ),
-            ...enabledFields,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFormField({
-    required TextEditingController controller,
-    required String label,
-    required String placeholder,
-    required bool requiredField,
-    required TextInputType keyboardType,
-    required String? Function(String?) validator,
-    required Color primaryColor,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          RichText(
-            text: TextSpan(
-              text: label,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF4B5563),
-              ),
-              children: [
-                if (requiredField)
-                  TextSpan(
-                    text: ' *',
-                    style: TextStyle(
-                      color: _blend(Colors.white, primaryColor, 0.1),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextFormField(
-            controller: controller,
-            keyboardType: keyboardType,
-            validator: validator,
-            decoration: InputDecoration(
-              hintText: placeholder,
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 22,
-                vertical: 17,
-              ),
-              hintStyle: const TextStyle(
-                color: Color(0xFF9CA3AF),
-                fontSize: 17,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: primaryColor),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFEF4444)),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFEF4444)),
-              ),
-            ),
-          ),
-        ],
+    return Form(
+      key: _formKey,
+      child: EasySupportFormCard(
+        primaryColor: primaryColor,
+        title: form.formMessage,
+        children: fields,
       ),
     );
   }
@@ -405,31 +264,13 @@ class _EasySupportViewState extends State<EasySupportView> {
     Navigator.of(context).maybePop();
   }
 
-  static Color _parseHexColor(String? hex, {required Color fallback}) {
-    final raw = hex?.trim();
-    if (raw == null || raw.isEmpty) {
-      return fallback;
-    }
-
-    var value = raw.replaceFirst('#', '');
-    if (value.length == 3) {
-      value = value.split('').map((char) => '$char$char').join();
-    }
-    if (value.length == 6) {
-      value = 'FF$value';
-    }
-    if (value.length != 8) {
-      return fallback;
-    }
-
-    final parsed = int.tryParse(value, radix: 16);
-    if (parsed == null) {
-      return fallback;
-    }
-    return Color(parsed);
+  static bool _isValidEmail(String email) {
+    final emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    return emailPattern.hasMatch(email);
   }
 
-  static Color _blend(Color first, Color second, double amount) {
-    return Color.lerp(first, second, amount) ?? second;
+  static bool _isLikelyPhone(String phone) {
+    final numeric = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    return numeric.length >= 7;
   }
 }
