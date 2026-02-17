@@ -21,7 +21,7 @@ dependencies:
 ```dart
 import 'package:easy_support_flutter/easy_support_flutter.dart';
 
-EasySupport.init(
+await EasySupport.init(
   const EasySupportConfig(
     sdkBaseUrl: 'https://easysupport-portal.onevision.io',
     baseUrl: 'https://easysupport-portal.onevision.io',
@@ -57,6 +57,10 @@ EasySupportView(
 ## Notes
 
 - `apiBaseUrl` defaults to `${baseUrl}/api/v1` if not provided.
+- During `EasySupport.init`, the SDK calls `${apiBaseUrl}/channel/key` first.
+- All widget API calls include `channel_key: channelToken` in headers.
+- Init state is available via `EasySupport.state` / `EasySupport.stateListenable`.
+- Network workflow is handled by repository (`EasySupportRepository` -> `EasySupportDioRepository`) using `GET /channel/key`.
 - Use public HTTPS URLs in production.
 - Do not expose secret server keys in client config.
 - Your backend must allow calls from app webview clients.

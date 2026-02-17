@@ -43,6 +43,12 @@ class EasySupportConfig {
     return _stripTrailingSlashes(value);
   }
 
+  Map<String, String> get resolvedHeaders {
+    final headers = Map<String, String>.from(additionalHeaders);
+    headers['channel_key'] = channelToken;
+    return headers;
+  }
+
   Map<String, dynamic> toJavaScriptOptions() {
     return <String, dynamic>{
       'channelToken': channelToken,
@@ -55,7 +61,7 @@ class EasySupportConfig {
         'channelKey': channelKey!.trim(),
       if (widgetTitle != null && widgetTitle!.trim().isNotEmpty)
         'widgetTitle': widgetTitle!.trim(),
-      if (additionalHeaders.isNotEmpty) 'additionalHeaders': additionalHeaders,
+      if (resolvedHeaders.isNotEmpty) 'additionalHeaders': resolvedHeaders,
     };
   }
 
