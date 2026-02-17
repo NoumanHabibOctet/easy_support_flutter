@@ -51,7 +51,6 @@ EasySupportView(
 - During `EasySupport.init`, the SDK calls `${apiBaseUrl}/channel/key` first.
 - All widget API calls include `channel_key: channelToken` in headers.
 - Init state is available via `EasySupport.state` / `EasySupport.stateListenable`.
-- API response data is available via `EasySupport.channelConfiguration`.
 - Merged runtime config (input params + API response) is available via `EasySupport.resolvedConfig`.
 - Network workflow is handled by repository (`EasySupportRepository` -> `EasySupportDioRepository`) using `GET /channel/key`.
 - Use public HTTPS URLs in production.

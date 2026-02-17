@@ -1,13 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import 'easy_support_controller.dart';
+import 'easy_support_repository.dart';
+import 'easy_support_view.dart';
 import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_config.dart';
-import 'easy_support_repository.dart';
-
-typedef EasySupportErrorCallback = void Function(WebResourceError error);
 
 class EasySupport {
   EasySupport._();
@@ -20,8 +18,6 @@ class EasySupport {
   static bool get isInitialized => _config != null;
   static bool get isReady => _controller.value.isReady;
   static EasySupportInitState get state => _controller.value;
-  static EasySupportChannelConfiguration? get channelConfiguration =>
-      _controller.value.channelConfiguration;
   static ValueListenable<EasySupportInitState> get stateListenable =>
       _controller;
 
@@ -52,7 +48,7 @@ class EasySupport {
     );
 
     final navigator = Navigator.of(context);
-    await _ensureReady();
+    final resolvedChannelConfiguration = await _ensureReady();
     if (!navigator.mounted) {
       return;
     }
@@ -68,6 +64,7 @@ class EasySupport {
           height: MediaQuery.of(sheetContext).size.height * heightFactor,
           child: EasySupportView(
             config: EasySupport.resolvedConfig,
+            channelConfiguration: resolvedChannelConfiguration,
             onError: onError,
           ),
         );
@@ -80,42 +77,17 @@ class EasySupport {
   }
 
   static EasySupportConfig get resolvedConfig {
-    final channel = channelConfiguration;
+    final channel = _currentChannelConfiguration;
     if (channel == null) {
       return config;
     }
     return config.mergeWithChannelConfiguration(channel);
   }
 
+  static EasySupportChannelConfiguration? get _currentChannelConfiguration =>
+      _controller.value.channelConfiguration;
+
   static Future<EasySupportChannelConfiguration> _ensureReady() async {
     return _controller.initialize(config);
-  }
-}
-
-class EasySupportView extends StatefulWidget {
-  const EasySupportView({
-    super.key,
-    required this.config,
-    this.onError,
-  });
-
-  final EasySupportConfig config;
-  final EasySupportErrorCallback? onError;
-
-  @override
-  State<EasySupportView> createState() => _EasySupportViewState();
-}
-
-class _EasySupportViewState extends State<EasySupportView> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Text(
-      'EasySupportView is under development. Please check back later.',
-    );
   }
 }

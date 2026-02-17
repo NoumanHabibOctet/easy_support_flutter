@@ -77,8 +77,20 @@ class EasySupportChannelConfiguration {
       workspaceId: json['workspace_id'] as String?,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
-      chatForm: json['chat_form'],
+      chatForm: _parseChatForm(json['chat_form']),
     );
+  }
+
+  static EasySupportChatFormConfiguration? _parseChatForm(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return EasySupportChatFormConfiguration.fromJson(value);
+    }
+    if (value is Map) {
+      return EasySupportChatFormConfiguration.fromJson(
+        Map<String, dynamic>.from(value),
+      );
+    }
+    return null;
   }
 
   final String? id;
@@ -104,7 +116,85 @@ class EasySupportChannelConfiguration {
   final String? workspaceId;
   final String? createdAt;
   final String? updatedAt;
-  final dynamic chatForm;
+  final EasySupportChatFormConfiguration? chatForm;
+
+  bool get hasActiveForm {
+    final form = chatForm;
+    if (form == null) {
+      return false;
+    }
+    if (isFormEnabled == false || form.isActive == false) {
+      return false;
+    }
+    return form.isEmailEnabled == true ||
+        form.isPhoneEnabled == true ||
+        form.isNameEnabled == true;
+  }
+}
+
+class EasySupportChatFormConfiguration {
+  const EasySupportChatFormConfiguration({
+    this.id,
+    this.channelId,
+    this.formMessage,
+    this.isActive,
+    this.isEmailEnabled,
+    this.isEmailRequired,
+    this.emailFieldLabel,
+    this.emailFieldPlaceholder,
+    this.isPhoneEnabled,
+    this.isPhoneRequired,
+    this.phoneFieldLabel,
+    this.phoneFieldPlaceholder,
+    this.isNameEnabled,
+    this.isNameRequired,
+    this.nameFieldLabel,
+    this.nameFieldPlaceholder,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory EasySupportChatFormConfiguration.fromJson(Map<String, dynamic> json) {
+    return EasySupportChatFormConfiguration(
+      id: json['id'] as String?,
+      channelId: json['channel_id'] as String?,
+      formMessage: json['form_message'] as String?,
+      isActive: json['is_active'] as bool?,
+      isEmailEnabled: json['is_email_enabled'] as bool?,
+      isEmailRequired: json['is_email_required'] as bool?,
+      emailFieldLabel: json['email_field_label'] as String?,
+      emailFieldPlaceholder: json['email_field_placeholder'] as String?,
+      isPhoneEnabled: json['is_phone_enabled'] as bool?,
+      isPhoneRequired: json['is_phone_required'] as bool?,
+      phoneFieldLabel: json['phone_field_label'] as String?,
+      phoneFieldPlaceholder: json['phone_field_placeholder'] as String?,
+      isNameEnabled: json['is_name_enabled'] as bool?,
+      isNameRequired: json['is_name_required'] as bool?,
+      nameFieldLabel: json['name_field_label'] as String?,
+      nameFieldPlaceholder: json['name_field_placeholder'] as String?,
+      createdAt: json['created_at'] as String?,
+      updatedAt: json['updated_at'] as String?,
+    );
+  }
+
+  final String? id;
+  final String? channelId;
+  final String? formMessage;
+  final bool? isActive;
+  final bool? isEmailEnabled;
+  final bool? isEmailRequired;
+  final String? emailFieldLabel;
+  final String? emailFieldPlaceholder;
+  final bool? isPhoneEnabled;
+  final bool? isPhoneRequired;
+  final String? phoneFieldLabel;
+  final String? phoneFieldPlaceholder;
+  final bool? isNameEnabled;
+  final bool? isNameRequired;
+  final String? nameFieldLabel;
+  final String? nameFieldPlaceholder;
+  final String? createdAt;
+  final String? updatedAt;
 }
 
 extension EasySupportConfigRuntimeMerge on EasySupportConfig {

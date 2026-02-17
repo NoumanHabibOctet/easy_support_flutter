@@ -72,6 +72,24 @@ void main() {
         'is_emoji_enabled': false,
         'is_media_enabled': false,
         'token': 'api_nat1ht02fmlq45lps',
+        'is_form_enabled': true,
+        'chat_form': <String, dynamic>{
+          'id': '1bb2b3b5-7f63-46ab-9b8a-f9755d52cf33',
+          'form_message': 'testing',
+          'is_active': true,
+          'is_email_enabled': true,
+          'is_email_required': true,
+          'email_field_label': 'Email Id',
+          'email_field_placeholder': 'emailAddress',
+          'is_phone_enabled': true,
+          'is_phone_required': true,
+          'phone_field_label': 'Phone number',
+          'phone_field_placeholder': 'phoneNumber',
+          'is_name_enabled': true,
+          'is_name_required': true,
+          'name_field_label': 'Full name',
+          'name_field_placeholder': 'fullName',
+        },
       },
     });
 
@@ -90,6 +108,9 @@ void main() {
     expect(response.success, true);
     expect(response.data?.name, "Noman's Channel");
     expect(response.data?.token, 'api_nat1ht02fmlq45lps');
+    expect(response.data?.chatForm?.isEmailRequired, true);
+    expect(response.data?.chatForm?.emailFieldLabel, 'Email Id');
+    expect(response.data?.hasActiveForm, true);
     expect(mergedConfig.widgetTitle, 'Hi there ! How can we help you ');
     expect(mergedConfig.isEmojiEnabled, false);
     expect(mergedConfig.isMediaEnabled, false);
