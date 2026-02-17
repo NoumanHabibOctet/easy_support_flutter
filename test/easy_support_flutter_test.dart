@@ -115,4 +115,20 @@ void main() {
     expect(mergedConfig.isEmojiEnabled, false);
     expect(mergedConfig.isMediaEnabled, false);
   });
+
+  test('shows chat form when chat_form is active even if is_form_enabled is false', () {
+    final response = EasySupportChannelKeyResponse.fromJson(<String, dynamic>{
+      'success': true,
+      'data': <String, dynamic>{
+        'is_form_enabled': false,
+        'chat_form': <String, dynamic>{
+          'is_active': true,
+          'is_email_enabled': true,
+          'is_email_required': true,
+        },
+      },
+    });
+
+    expect(response.data?.hasActiveForm, true);
+  });
 }

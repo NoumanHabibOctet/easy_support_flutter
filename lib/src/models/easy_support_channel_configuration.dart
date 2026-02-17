@@ -123,7 +123,7 @@ class EasySupportChannelConfiguration {
     if (form == null) {
       return false;
     }
-    if (isFormEnabled == false || form.isActive == false) {
+    if (form.isActive == false) {
       return false;
     }
     return form.isEmailEnabled == true ||
