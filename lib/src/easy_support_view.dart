@@ -47,6 +47,7 @@ class _EasySupportViewState extends State<EasySupportView> {
   EasySupportCustomerSession _session = const EasySupportCustomerSession();
   bool _isSessionLoading = true;
   bool _isSubmitting = false;
+  String? _lastPrintedScreenState;
 
   @override
   void initState() {
@@ -103,6 +104,7 @@ class _EasySupportViewState extends State<EasySupportView> {
     }
 
     final shouldShowChatScreen = _session.hasCustomerId;
+    _printScreenState(shouldShowChatScreen: shouldShowChatScreen);
     if (shouldShowChatScreen) {
       return EasySupportChatView(
         title: title,
@@ -325,6 +327,7 @@ class _EasySupportViewState extends State<EasySupportView> {
       setState(() {
         _session = session;
       });
+      debugPrint('EasySupport customer_id: ${session.customerId}');
     } catch (error) {
       if (!mounted) {
         return;
@@ -379,6 +382,18 @@ class _EasySupportViewState extends State<EasySupportView> {
     setState(() {});
   }
 
+  void _printScreenState({required bool shouldShowChatScreen}) {
+    final screenName = shouldShowChatScreen ? 'chat' : 'start';
+    final stateKey = '$screenName:${_session.customerId ?? 'null'}';
+    if (_lastPrintedScreenState == stateKey) {
+      return;
+    }
+    _lastPrintedScreenState = stateKey;
+    debugPrint(
+      'EasySupport screen: $screenName, customer_id: ${_session.customerId}',
+    );
+  }
+
   Future<void> _loadCustomerSession() async {
     try {
       final session = await _conversationController.loadSession();
@@ -389,6 +404,7 @@ class _EasySupportViewState extends State<EasySupportView> {
         _session = session;
         _isSessionLoading = false;
       });
+      debugPrint('EasySupport cached customer_id: ${session.customerId}');
     } catch (error) {
       if (!mounted) {
         return;
