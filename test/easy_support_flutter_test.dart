@@ -229,4 +229,52 @@ void main() {
       <String, String>{'x-test': '1'},
     );
   });
+
+  test('parses chat messages response with page_info', () {
+    final response = EasySupportChatMessagesResponse.fromJson(<String, dynamic>{
+      'success': true,
+      'data': <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': '42ad0dad-cf05-45db-a515-a813fadd5eb8',
+          'chat_id': '96177bd5-ddbc-4810-bae8-643f20ca3123',
+          'customer_id': 'c9a9f69c-4d37-4a1e-ba18-a5d4a56cc752',
+          'agent_id': null,
+          'content': 'hi',
+          'type': 'message',
+          'is_seen': true,
+          'created_at': '2026-02-19T06:32:52.904Z',
+        },
+        <String, dynamic>{
+          'id': '75675f43-8d58-4019-af2d-bde7fa91d93c',
+          'chat_id': '96177bd5-ddbc-4810-bae8-643f20ca3123',
+          'customer_id': null,
+          'agent_id': '2821a505-8b63-4975-868f-6f3f6a44b79c',
+          'content': 'Agent joined the chat',
+          'type': 'notification',
+          'is_seen': true,
+          'created_at': '2026-02-19T06:30:37.808Z',
+        },
+      ],
+      'page_info': <String, dynamic>{
+        'limit': 20,
+        'has_more': false,
+        'next_cursor': null,
+      },
+    });
+
+    expect(response.success, true);
+    expect(response.data.length, 2);
+    expect(response.data.first.content, 'hi');
+    expect(response.data.last.isNotification, true);
+    expect(response.pageInfo?.limit, 20);
+    expect(response.pageInfo?.hasMore, false);
+
+    final encoded = response.toJson();
+    expect(encoded['success'], true);
+    expect((encoded['data'] as List).length, 2);
+    expect(
+      (encoded['page_info'] as Map<String, dynamic>)['has_more'],
+      false,
+    );
+  });
 }

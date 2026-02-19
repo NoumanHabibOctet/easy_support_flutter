@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'models/easy_support_channel_configuration.dart';
+import 'models/easy_support_chat_messages_response.dart';
 import 'models/easy_support_config.dart';
 import 'models/easy_support_customer_action.dart';
 import 'models/easy_support_customer_response.dart';
@@ -19,6 +21,18 @@ abstract class EasySupportRepository {
       'postCustomer is not implemented in this repository.',
     );
   }
+
+  Future<EasySupportChatMessagesResponse> fetchCustomerChatMessages({
+    required EasySupportConfig config,
+    required String chatId,
+    int limit = 20,
+    String sortOrder = 'desc',
+    String sortBy = 'created_at',
+  }) {
+    throw UnimplementedError(
+      'fetchCustomerChatMessages is not implemented in this repository.',
+    );
+  }
 }
 
 class EasySupportDioRepository implements EasySupportRepository {
@@ -33,6 +47,7 @@ class EasySupportDioRepository implements EasySupportRepository {
     final uri = Uri.parse('${config.normalizedApiBaseUrl}/channel/key');
 
     try {
+      debugPrint('EasySupport init API call: ${uri.toString()}');
       final response = await _dio.get<dynamic>(
         uri.toString(),
         options: Options(
@@ -135,6 +150,76 @@ class EasySupportDioRepository implements EasySupportRepository {
       throw EasySupportApiException(
         message: error.message ??
             'EasySupport customer request failed for ${uri.path}',
+        statusCode: error.response?.statusCode ?? -1,
+        isNetworkError: isNetworkError,
+      );
+    }
+  }
+
+  @override
+  Future<EasySupportChatMessagesResponse> fetchCustomerChatMessages({
+    required EasySupportConfig config,
+    required String chatId,
+    int limit = 20,
+    String sortOrder = 'desc',
+    String sortBy = 'created_at',
+  }) async {
+    final uri = Uri.parse(
+      '${config.normalizedApiBaseUrl}/message/customer/chat/$chatId',
+    ).replace(
+      queryParameters: <String, String>{
+        'limit': '$limit',
+        'sort_order': sortOrder,
+        'sort_by': sortBy,
+      },
+    );
+
+    try {
+      final response = await _dio.get<dynamic>(
+        uri.toString(),
+        options: Options(
+          method: 'GET',
+          headers: config.resolvedHeaders,
+        ),
+      );
+
+      final statusCode = response.statusCode ?? -1;
+      if (statusCode < 200 || statusCode >= 300) {
+        throw EasySupportApiException(
+          message: 'EasySupport chat fetch failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+
+      final rawBody = response.data;
+      if (rawBody is! Map) {
+        throw EasySupportApiException(
+          message: 'EasySupport chat fetch failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+
+      final parsedResponse = EasySupportChatMessagesResponse.fromJson(
+        Map<String, dynamic>.from(rawBody),
+      );
+      if (!parsedResponse.success) {
+        throw EasySupportApiException(
+          message: 'EasySupport chat fetch failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+      debugPrint(
+        'EasySupport chat history loaded: ${parsedResponse.data.length} messages',
+      );
+      return parsedResponse;
+    } on DioException catch (error) {
+      final isNetworkError = error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout;
+      throw EasySupportApiException(
+        message:
+            error.message ?? 'EasySupport chat request failed for ${uri.path}',
         statusCode: error.response?.statusCode ?? -1,
         isNetworkError: isNetworkError,
       );

@@ -1,5 +1,6 @@
 import 'easy_support_customer_local_storage.dart';
 import 'easy_support_repository.dart';
+import 'easy_support_socket_service.dart';
 import 'models/easy_support_config.dart';
 import 'models/easy_support_customer_action.dart';
 import 'models/easy_support_customer_session.dart';
@@ -9,11 +10,14 @@ class EasySupportConversationController {
   EasySupportConversationController({
     required EasySupportRepository repository,
     required EasySupportCustomerLocalStorage localStorage,
+    EasySupportSocketService? socketService,
   })  : _repository = repository,
-        _localStorage = localStorage;
+        _localStorage = localStorage,
+        _socketService = socketService ?? EasySupportSocketIoService();
 
   final EasySupportRepository _repository;
   final EasySupportCustomerLocalStorage _localStorage;
+  final EasySupportSocketService _socketService;
 
   Future<EasySupportCustomerSession> loadSession() {
     return _localStorage.readSession();
@@ -40,12 +44,36 @@ class EasySupportConversationController {
         statusCode: -1,
       );
     }
+    final resolvedChatId = await _resolveChatId(
+      config: config,
+      customerId: resolvedCustomerId,
+      apiChatId: response.chatId,
+    );
+
     final session = EasySupportCustomerSession(
       customerId: resolvedCustomerId,
-      chatId: response.chatId,
+      chatId: resolvedChatId,
     );
 
     await _localStorage.writeSession(session);
     return session;
+  }
+
+  Future<String> _resolveChatId({
+    required EasySupportConfig config,
+    required String customerId,
+    required String? apiChatId,
+  }) async {
+    try {
+      return await _socketService.joinChat(
+        config: config,
+        customerId: customerId,
+      );
+    } catch (_) {
+      if (apiChatId != null && apiChatId.trim().isNotEmpty) {
+        return apiChatId;
+      }
+      rethrow;
+    }
   }
 }

@@ -19,6 +19,7 @@ void main() {
     final controller = EasySupportConversationController(
       repository: repository,
       localStorage: storage,
+      socketService: _FakeSocketService(chatId: 'chat_1'),
     );
 
     final session = await controller.startConversation(
@@ -31,6 +32,7 @@ void main() {
     expect(session.customerId, 'customer_1');
     expect(session.chatId, 'chat_1');
     expect(storage.writtenSession?.customerId, 'customer_1');
+    expect(storage.writtenSession?.chatId, 'chat_1');
   });
 
   test('update sends customer_id and filled fields', () async {
@@ -44,6 +46,7 @@ void main() {
     final controller = EasySupportConversationController(
       repository: repository,
       localStorage: storage,
+      socketService: _FakeSocketService(chatId: 'chat_5'),
     );
 
     await controller.startConversation(
@@ -60,6 +63,31 @@ void main() {
     expect(repository.capturedBody['name'], 'John Doe');
     expect(repository.capturedBody['email'], 'john@example.com');
     expect(repository.capturedBody.containsKey('phone'), false);
+  });
+
+  test('uses API chat_id when socket join fails', () async {
+    final repository = _FakeConversationRepository(
+      response: const EasySupportCustomerResponse(
+        success: true,
+        customerId: 'customer_1',
+        chatId: 'chat_from_api',
+      ),
+    );
+    final storage = _FakeCustomerStorage();
+    final controller = EasySupportConversationController(
+      repository: repository,
+      localStorage: storage,
+      socketService: _FailingSocketService(),
+    );
+
+    final session = await controller.startConversation(
+      config: config,
+      submission: const EasySupportCustomerSubmission(
+        customerId: 'customer_1',
+      ),
+    );
+
+    expect(session.chatId, 'chat_from_api');
   });
 }
 
@@ -89,6 +117,17 @@ class _FakeConversationRepository implements EasySupportRepository {
     capturedBody = body;
     return _response;
   }
+
+  @override
+  Future<EasySupportChatMessagesResponse> fetchCustomerChatMessages({
+    required EasySupportConfig config,
+    required String chatId,
+    int limit = 20,
+    String sortOrder = 'desc',
+    String sortBy = 'created_at',
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _FakeCustomerStorage implements EasySupportCustomerLocalStorage {
@@ -104,5 +143,29 @@ class _FakeCustomerStorage implements EasySupportCustomerLocalStorage {
   Future<void> writeSession(EasySupportCustomerSession session) async {
     writtenSession = session;
     this.session = session;
+  }
+}
+
+class _FakeSocketService implements EasySupportSocketService {
+  _FakeSocketService({required this.chatId});
+
+  final String chatId;
+
+  @override
+  Future<String> joinChat({
+    required EasySupportConfig config,
+    required String customerId,
+  }) async {
+    return chatId;
+  }
+}
+
+class _FailingSocketService implements EasySupportSocketService {
+  @override
+  Future<String> joinChat({
+    required EasySupportConfig config,
+    required String customerId,
+  }) async {
+    throw StateError('join failed');
   }
 }

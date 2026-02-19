@@ -42,6 +42,7 @@ class _EasySupportViewState extends State<EasySupportView> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  late final EasySupportRepository _repository;
   late final EasySupportConversationController _conversationController;
 
   EasySupportCustomerSession _session = const EasySupportCustomerSession();
@@ -52,8 +53,9 @@ class _EasySupportViewState extends State<EasySupportView> {
   @override
   void initState() {
     super.initState();
+    _repository = EasySupportDioRepository();
     _conversationController = EasySupportConversationController(
-      repository: EasySupportDioRepository(),
+      repository: _repository,
       localStorage: EasySupportSharedPrefsCustomerLocalStorage(),
     );
     _emailController.addListener(_onFormChanged);
@@ -103,7 +105,7 @@ class _EasySupportViewState extends State<EasySupportView> {
       return _buildLoadingState();
     }
 
-    final shouldShowChatScreen = _session.hasCustomerId;
+    final shouldShowChatScreen = _session.hasCustomerId && _session.hasChatId;
     _printScreenState(shouldShowChatScreen: shouldShowChatScreen);
     if (shouldShowChatScreen) {
       return EasySupportChatView(
@@ -112,6 +114,9 @@ class _EasySupportViewState extends State<EasySupportView> {
         onPrimaryColor: onPrimaryColor,
         isFullScreen: widget.isFullScreen,
         onClose: () => Navigator.of(context).maybePop(),
+        config: widget.config,
+        session: _session,
+        repository: _repository,
       );
     }
 

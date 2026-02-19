@@ -66,6 +66,17 @@ class _FakeSuccessRepository implements EasySupportRepository {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<EasySupportChatMessagesResponse> fetchCustomerChatMessages({
+    required EasySupportConfig config,
+    required String chatId,
+    int limit = 20,
+    String sortOrder = 'desc',
+    String sortBy = 'created_at',
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _FakeFailureRepository implements EasySupportRepository {
@@ -84,6 +95,17 @@ class _FakeFailureRepository implements EasySupportRepository {
     required EasySupportConfig config,
     required EasySupportCustomerAction action,
     required Map<String, dynamic> body,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<EasySupportChatMessagesResponse> fetchCustomerChatMessages({
+    required EasySupportConfig config,
+    required String chatId,
+    int limit = 20,
+    String sortOrder = 'desc',
+    String sortBy = 'created_at',
   }) {
     throw UnimplementedError();
   }
@@ -116,6 +138,17 @@ class _FakeNetworkThenSuccessRepository implements EasySupportRepository {
     required EasySupportConfig config,
     required EasySupportCustomerAction action,
     required Map<String, dynamic> body,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<EasySupportChatMessagesResponse> fetchCustomerChatMessages({
+    required EasySupportConfig config,
+    required String chatId,
+    int limit = 20,
+    String sortOrder = 'desc',
+    String sortBy = 'created_at',
   }) {
     throw UnimplementedError();
   }

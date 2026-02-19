@@ -1,11 +1,15 @@
 library easy_support_flutter;
 
 export 'src/models/easy_support_channel_configuration.dart';
+export 'src/models/easy_support_chat_message.dart';
+export 'src/models/easy_support_chat_messages_page_info.dart';
+export 'src/models/easy_support_chat_messages_response.dart';
 export 'src/models/easy_support_customer_action.dart';
 export 'src/models/easy_support_customer_response.dart';
 export 'src/models/easy_support_customer_result.dart';
 export 'src/models/easy_support_customer_session.dart';
 export 'src/models/easy_support_customer_submission.dart';
+export 'src/easy_support_chat_controller.dart';
 export 'src/easy_support_controller.dart';
 export 'src/easy_support_conversation_controller.dart';
 export 'src/easy_support_customer_local_storage.dart';
@@ -15,4 +19,5 @@ export 'src/easy_support_chat_view.dart';
 export 'src/easy_support_repository.dart';
 export 'src/easy_support_retry_scheduler.dart';
 export 'src/easy_support_screen.dart';
+export 'src/easy_support_socket_service.dart';
 export 'src/easy_support_view.dart';
