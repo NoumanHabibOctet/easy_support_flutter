@@ -232,5 +232,11 @@ class _NoopChatSocketConnection implements EasySupportChatSocketConnection {
   }) async {}
 
   @override
+  Future<void> leaveChat(
+    String chatId, {
+    Duration timeout = const Duration(seconds: 8),
+  }) async {}
+
+  @override
   Future<void> dispose() async {}
 }

@@ -5,12 +5,16 @@ import 'package:flutter/material.dart';
 import 'easy_support_chat_controller.dart';
 import 'easy_support_repository.dart';
 import 'easy_support_chat_socket_connection.dart';
+import 'easy_support_customer_local_storage.dart';
 import 'easy_support_socket_service.dart';
+import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_chat_emit_payload.dart';
+import 'models/easy_support_feedback_submission.dart';
 import 'models/easy_support_chat_message.dart';
 import 'models/easy_support_config.dart';
 import 'models/easy_support_customer_session.dart';
 import 'widgets/easy_support_color_utils.dart';
+import 'widgets/easy_support_feedback_form_sheet.dart';
 
 class EasySupportChatView extends StatefulWidget {
   const EasySupportChatView({
@@ -22,6 +26,7 @@ class EasySupportChatView extends StatefulWidget {
     required this.onClose,
     required this.config,
     required this.session,
+    this.channelConfiguration,
     this.repository,
   });
 
@@ -32,6 +37,7 @@ class EasySupportChatView extends StatefulWidget {
   final VoidCallback onClose;
   final EasySupportConfig config;
   final EasySupportCustomerSession session;
+  final EasySupportChannelConfiguration? channelConfiguration;
   final EasySupportRepository? repository;
 
   @override
@@ -46,6 +52,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _messageController = TextEditingController();
   bool _isSending = false;
+  bool _isLeaving = false;
 
   @override
   void initState() {
@@ -116,7 +123,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
                 ),
                 _buildHeaderIcon(
                   icon: Icons.logout_rounded,
-                  onTap: () {},
+                  onTap: _isLeaving ? () {} : _onLeaveChatPressed,
                 ),
                 const SizedBox(width: 6),
                 _buildHeaderIcon(
@@ -407,6 +414,106 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         });
       }
     }
+  }
+
+  Future<void> _onLeaveChatPressed() async {
+    if (_isLeaving) {
+      return;
+    }
+
+    final chatId = widget.session.chatId;
+    if (chatId == null || chatId.trim().isEmpty) {
+      widget.onClose();
+      return;
+    }
+
+    setState(() {
+      _isLeaving = true;
+    });
+
+    try {
+      final feedbackSubmission = await _collectFeedbackIfEnabled();
+      if (!mounted) {
+        return;
+      }
+      if (_isFeedbackEnabled && feedbackSubmission == null) {
+        setState(() {
+          _isLeaving = false;
+        });
+        return;
+      }
+      if (feedbackSubmission != null) {
+        debugPrint(
+          'EasySupport feedback submission: ${feedbackSubmission.toJson()}',
+        );
+      }
+
+      await _connectChatSocketIfPossible();
+      final activeConnection = _chatSocketConnection;
+      if (activeConnection != null) {
+        await activeConnection.leaveChat(chatId);
+      }
+
+      await EasySupportSharedPrefsCustomerLocalStorage().writeSession(
+        EasySupportCustomerSession(
+          customerId: widget.session.customerId,
+          channelId: widget.session.channelId,
+        ),
+      );
+      debugPrint('EasySupport leave_chat success, chat_id cleared: $chatId');
+
+      await activeConnection?.dispose();
+      _chatSocketConnection = null;
+
+      if (!mounted) {
+        return;
+      }
+      widget.onClose();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: Text('Leave chat failed: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLeaving = false;
+        });
+      }
+    }
+  }
+
+  bool get _isFeedbackEnabled =>
+      widget.channelConfiguration?.isFeedbackEnabled == true;
+
+  Future<EasySupportFeedbackSubmission?> _collectFeedbackIfEnabled() async {
+    if (!_isFeedbackEnabled) {
+      return null;
+    }
+
+    final feedbackDisplayType =
+        (widget.channelConfiguration?.feedbackDisplayType ?? '').toLowerCase();
+    final showStars =
+        feedbackDisplayType.isEmpty || feedbackDisplayType == 'star';
+
+    return showModalBottomSheet<EasySupportFeedbackSubmission>(
+      context: context,
+      isDismissible: true,
+      enableDrag: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return EasySupportFeedbackFormSheet(
+          primaryColor: widget.primaryColor,
+          feedbackMessage: widget.channelConfiguration?.feedbackMessage,
+          showStars: showStars,
+        );
+      },
+    );
   }
 
   void _onMessageChanged() {

@@ -121,6 +121,7 @@ class _EasySupportViewState extends State<EasySupportView> {
         onClose: () => Navigator.of(context).maybePop(),
         config: widget.config,
         session: _session,
+        channelConfiguration: channel,
         repository: _repository,
       );
     }

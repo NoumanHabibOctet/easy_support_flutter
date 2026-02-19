@@ -6,6 +6,7 @@ export 'src/models/easy_support_chat_message.dart';
 export 'src/models/easy_support_chat_messages_page_info.dart';
 export 'src/models/easy_support_chat_messages_response.dart';
 export 'src/models/easy_support_customer_action.dart';
+export 'src/models/easy_support_feedback_submission.dart';
 export 'src/models/easy_support_customer_response.dart';
 export 'src/models/easy_support_customer_result.dart';
 export 'src/models/easy_support_customer_session.dart';

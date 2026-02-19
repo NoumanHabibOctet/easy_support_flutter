@@ -4,5 +4,7 @@ abstract class EasySupportChatSocketConnection {
   Future<void> sendChatMessage(EasySupportChatEmitPayload payload,
       {Duration timeout});
 
+  Future<void> leaveChat(String chatId, {Duration timeout});
+
   Future<void> dispose();
 }

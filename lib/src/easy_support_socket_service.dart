@@ -592,6 +592,71 @@ class _EasySupportSocketIoChatConnection
   }
 
   @override
+  Future<void> leaveChat(
+    String chatId, {
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    final normalizedChatId = chatId.trim();
+    if (normalizedChatId.isEmpty) {
+      return;
+    }
+    _logger('leave_chat emit on active socket, chat_id=$normalizedChatId');
+
+    if (_socket.connected) {
+      _socket.emit(
+        'leave_chat',
+        <String, dynamic>{'chat_id': normalizedChatId},
+      );
+      return;
+    }
+
+    final completer = Completer<void>();
+    late void Function(dynamic) onConnect;
+    late void Function(dynamic) onConnectError;
+    late Timer timer;
+
+    void complete() {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
+
+    void failWith(Object error) {
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      }
+    }
+
+    onConnect = (_) {
+      _logger('chat socket reconnected for leave_chat');
+      _socket.emit(
+        'leave_chat',
+        <String, dynamic>{'chat_id': normalizedChatId},
+      );
+      complete();
+    };
+    onConnectError = (dynamic error) {
+      failWith(StateError('Socket connect error while leaving chat: $error'));
+    };
+
+    timer = Timer(timeout, () {
+      failWith(TimeoutException('leave_chat connect timed out', timeout));
+    });
+
+    _socket.onConnect(onConnect);
+    _socket.onConnectError(onConnectError);
+    _socket.connect();
+
+    try {
+      await completer.future;
+    } finally {
+      timer.cancel();
+      _socket.off('connect', onConnect);
+      _socket.off('connect_error', onConnectError);
+    }
+  }
+
+  @override
   Future<void> dispose() async {
     _logger('chat socket closing');
     _socket.offAny(_onAnyEvent);
