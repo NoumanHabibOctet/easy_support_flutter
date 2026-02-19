@@ -225,7 +225,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
     return io.io(
       socketBaseUrl,
       io.OptionBuilder()
-          .setTransports(<String>['websocket'])
+          .setTransports(<String>['websocket', 'polling'])
           .disableAutoConnect()
           .setExtraHeaders(config.resolvedHeaders)
           .build(),
