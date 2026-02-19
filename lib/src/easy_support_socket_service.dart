@@ -104,7 +104,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
     socket.on('join_chat_success', onJoinEvent);
     socket.on('chat_joined', onJoinEvent);
     socket.on('chat_id', onJoinEvent);
-    socket.on('chatId', onJoinEvent);
+    // socket.on('chatId', onJoinEvent);
     socket.onConnectError((dynamic error) {
       failWith(StateError('Socket connect error: $error'));
     });
