@@ -42,6 +42,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   late final EasySupportChatController _controller;
   late final EasySupportSocketService _socketService;
   EasySupportChatSocketConnection? _chatSocketConnection;
+  Future<void>? _socketConnectTask;
   final TextEditingController _messageController = TextEditingController();
   bool _isSending = false;
 
@@ -372,10 +373,12 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         unseenCount: 1,
       );
 
-      await _socketService.sendChatMessage(
-        config: widget.config,
-        payload: payload,
-      );
+      await _connectChatSocketIfPossible();
+      final activeConnection = _chatSocketConnection;
+      if (activeConnection == null) {
+        throw StateError('Chat socket is not connected');
+      }
+      await activeConnection.sendChatMessage(payload);
 
       _controller.addLocalCustomerMessage(
         customerId: customerId,
@@ -409,6 +412,29 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   }
 
   Future<void> _connectChatSocketIfPossible() async {
+    final activeConnection = _chatSocketConnection;
+    if (activeConnection != null) {
+      return;
+    }
+
+    final inFlight = _socketConnectTask;
+    if (inFlight != null) {
+      await inFlight;
+      return;
+    }
+
+    final task = _connectChatSocketInternal();
+    _socketConnectTask = task;
+    try {
+      await task;
+    } finally {
+      if (identical(_socketConnectTask, task)) {
+        _socketConnectTask = null;
+      }
+    }
+  }
+
+  Future<void> _connectChatSocketInternal() async {
     final chatId = widget.session.chatId;
     final customerId = widget.session.customerId;
     if (chatId == null ||

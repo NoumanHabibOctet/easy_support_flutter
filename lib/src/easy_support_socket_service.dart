@@ -501,6 +501,12 @@ class _EasySupportSocketIoChatConnection
   final void Function(String message) _logger;
 
   @override
+  Future<void> sendChatMessage(EasySupportChatEmitPayload payload) async {
+    _logger('chat emit on active socket, chat_id=${payload.chatId}');
+    _socket.emit('chat', payload.toJson());
+  }
+
+  @override
   Future<void> dispose() async {
     _logger('chat socket closing');
     _socket.offAny(_onAnyEvent);
