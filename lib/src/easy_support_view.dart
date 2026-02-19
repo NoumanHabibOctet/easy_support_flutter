@@ -387,32 +387,34 @@ class _EasySupportViewState extends State<EasySupportView> {
   Future<void> _loadCustomerSession() async {
     try {
       final session = await _conversationController.loadSession();
-      EasySupportCustomerResult? customer;
-      if (session.hasCustomerId) {
-        try {
-          final customerResponse =
-              await _conversationController.fetchCustomerById(
-            config: widget.config,
-            customerId: session.customerId!,
-          );
-          customer = customerResponse.result;
-          debugPrint(
-            'EasySupport fetched customer by id: ${customerResponse.customerId}',
-          );
-        } catch (error) {
-          debugPrint('EasySupport customer get failed: $error');
-        }
-      }
-
       if (!mounted) {
         return;
       }
-      _prefillFieldsFromCustomer(customer: customer);
       setState(() {
         _session = session;
         _isSessionLoading = false;
       });
       debugPrint('EasySupport cached customer_id: ${session.customerId}');
+
+      if (!session.hasCustomerId) {
+        return;
+      }
+
+      try {
+        final customerResponse = await _conversationController.fetchCustomerById(
+          config: widget.config,
+          customerId: session.customerId!,
+        );
+        if (!mounted) {
+          return;
+        }
+        _prefillFieldsFromCustomer(customer: customerResponse.result);
+        debugPrint(
+          'EasySupport fetched customer by id: ${customerResponse.customerId}',
+        );
+      } catch (error) {
+        debugPrint('EasySupport customer get failed: $error');
+      }
     } catch (error) {
       if (!mounted) {
         return;
@@ -443,13 +445,22 @@ class _EasySupportViewState extends State<EasySupportView> {
     final name = customer.name?.trim();
     final phone = customer.phone?.trim();
 
-    if (form.isEmailEnabled == true && email != null && email.isNotEmpty) {
+    if (form.isEmailEnabled == true &&
+        email != null &&
+        email.isNotEmpty &&
+        _emailController.text.trim().isEmpty) {
       _emailController.text = email;
     }
-    if (form.isNameEnabled == true && name != null && name.isNotEmpty) {
+    if (form.isNameEnabled == true &&
+        name != null &&
+        name.isNotEmpty &&
+        _nameController.text.trim().isEmpty) {
       _nameController.text = name;
     }
-    if (form.isPhoneEnabled == true && phone != null && phone.isNotEmpty) {
+    if (form.isPhoneEnabled == true &&
+        phone != null &&
+        phone.isNotEmpty &&
+        _phoneController.text.trim().isEmpty) {
       _phoneController.text = phone;
     }
   }
