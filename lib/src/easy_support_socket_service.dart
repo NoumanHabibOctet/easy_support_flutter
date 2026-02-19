@@ -67,7 +67,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       socket.emitWithAck(
         'join_chat',
         <String, dynamic>{
-          'id': customerId,
+          // 'id': customerId,
           'customer_id': customerId,
           if (channelId != null && channelId.trim().isNotEmpty)
             'channel_id': channelId.trim(),
