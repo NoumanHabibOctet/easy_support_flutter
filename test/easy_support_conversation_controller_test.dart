@@ -226,7 +226,10 @@ class _FailingSocketService implements EasySupportSocketService {
 
 class _NoopChatSocketConnection implements EasySupportChatSocketConnection {
   @override
-  Future<void> sendChatMessage(EasySupportChatEmitPayload payload) async {}
+  Future<void> sendChatMessage(
+    EasySupportChatEmitPayload payload, {
+    Duration timeout = const Duration(seconds: 8),
+  }) async {}
 
   @override
   Future<void> dispose() async {}

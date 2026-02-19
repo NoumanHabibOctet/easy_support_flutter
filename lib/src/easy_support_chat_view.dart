@@ -43,6 +43,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   late final EasySupportSocketService _socketService;
   EasySupportChatSocketConnection? _chatSocketConnection;
   Future<void>? _socketConnectTask;
+  final ScrollController _scrollController = ScrollController();
   final TextEditingController _messageController = TextEditingController();
   bool _isSending = false;
 
@@ -53,6 +54,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
       repository: widget.repository ?? EasySupportDioRepository(),
     );
     _socketService = EasySupportSocketIoService();
+    _controller.addListener(_onChatStateChanged);
     _messageController.addListener(_onMessageChanged);
     _loadMessages();
     unawaited(_connectChatSocketIfPossible());
@@ -64,6 +66,8 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     if (connection != null) {
       unawaited(connection.dispose());
     }
+    _controller.removeListener(_onChatStateChanged);
+    _scrollController.dispose();
     _messageController.removeListener(_onMessageChanged);
     _messageController.dispose();
     _controller.dispose();
@@ -149,6 +153,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
                   }
 
                   return ListView.separated(
+                    controller: _scrollController,
                     padding: const EdgeInsets.fromLTRB(10, 12, 10, 16),
                     itemCount: state.messages.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
@@ -411,6 +416,10 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     setState(() {});
   }
 
+  void _onChatStateChanged() {
+    _scrollToBottom();
+  }
+
   Future<void> _connectChatSocketIfPossible() async {
     final activeConnection = _chatSocketConnection;
     if (activeConnection != null) {
@@ -463,5 +472,21 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     } catch (error) {
       debugPrint('EasySupport chat socket connect failed: $error');
     }
+  }
+
+  void _scrollToBottom() {
+    if (!mounted || !_scrollController.hasClients) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    });
   }
 }

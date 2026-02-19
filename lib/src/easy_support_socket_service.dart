@@ -177,10 +177,6 @@ class EasySupportSocketIoService implements EasySupportSocketService {
     _log('chat socket connect start, chat_id=$normalizedChatId');
     final socket = _buildSocket(config);
 
-    void onAnyEvent(String event, dynamic payload) {
-      _log('socket event[$event]: $payload');
-    }
-
     void onChatEvent(dynamic payload) {
       final message = _extractIncomingMessage(
         payload,
@@ -199,6 +195,16 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       onMessage(message);
     }
 
+    void onAnyEvent(String event, dynamic payload) {
+      _log('socket event[$event]: $payload');
+      if (_isKnownChatEvent(event)) {
+        return;
+      }
+      if (_isLikelyChatPayload(payload)) {
+        onChatEvent(payload);
+      }
+    }
+
     void onAnyOutgoing(String event, dynamic payload) {
       _log('socket outgoing[$event]: $payload');
     }
@@ -209,9 +215,10 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       socket.emit(
         'join_chat',
         <String, dynamic>{
+          'id': customerId,
           'customer_id': customerId,
-          'chat_id': normalizedChatId,
           if (channelToken.isNotEmpty) 'channel_token': channelToken,
+          if (channelToken.isNotEmpty) 'channel_tokken': channelToken,
         },
       );
     }
@@ -334,6 +341,10 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       io.OptionBuilder()
           .setTransports(<String>['websocket', 'polling'])
           .disableAutoConnect()
+          .enableReconnection()
+          .setReconnectionAttempts(999999)
+          .setReconnectionDelay(1000)
+          .setReconnectionDelayMax(5000)
           .setExtraHeaders(config.resolvedHeaders)
           .build(),
     );
@@ -456,6 +467,32 @@ class EasySupportSocketIoService implements EasySupportSocketService {
     return null;
   }
 
+  static bool _isLikelyChatPayload(dynamic payload) {
+    final map = _asMap(payload);
+    if (map == null) {
+      return false;
+    }
+    return map.containsKey('chat_id') ||
+        map.containsKey('chatId') ||
+        map.containsKey('body') ||
+        map.containsKey('content') ||
+        map.containsKey('message');
+  }
+
+  static bool _isKnownChatEvent(String event) {
+    switch (event) {
+      case 'chat':
+      case 'message':
+      case 'new_message':
+      case 'chat_message':
+      case 'customer_message':
+      case 'agent_message':
+        return true;
+      default:
+        return false;
+    }
+  }
+
   static String? _readString(Map<String, dynamic> map, List<String> keys) {
     for (final key in keys) {
       final value = map[key];
@@ -501,9 +538,57 @@ class _EasySupportSocketIoChatConnection
   final void Function(String message) _logger;
 
   @override
-  Future<void> sendChatMessage(EasySupportChatEmitPayload payload) async {
+  Future<void> sendChatMessage(
+    EasySupportChatEmitPayload payload, {
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
     _logger('chat emit on active socket, chat_id=${payload.chatId}');
-    _socket.emit('chat', payload.toJson());
+    if (_socket.connected) {
+      _socket.emit('chat', payload.toJson());
+      return;
+    }
+
+    final completer = Completer<void>();
+    late void Function(dynamic) onConnect;
+    late void Function(dynamic) onConnectError;
+    late Timer timer;
+
+    void complete() {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
+
+    void failWith(Object error) {
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      }
+    }
+
+    onConnect = (_) {
+      _logger('chat socket reconnected for emit');
+      _socket.emit('chat', payload.toJson());
+      complete();
+    };
+    onConnectError = (dynamic error) {
+      failWith(StateError('Socket connect error while sending chat: $error'));
+    };
+
+    timer = Timer(timeout, () {
+      failWith(TimeoutException('chat emit connect timed out', timeout));
+    });
+
+    _socket.onConnect(onConnect);
+    _socket.onConnectError(onConnectError);
+    _socket.connect();
+
+    try {
+      await completer.future;
+    } finally {
+      timer.cancel();
+      _socket.off('connect', onConnect);
+      _socket.off('connect_error', onConnectError);
+    }
   }
 
   @override

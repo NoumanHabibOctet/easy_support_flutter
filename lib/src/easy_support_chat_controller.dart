@@ -57,9 +57,10 @@ class EasySupportChatController extends ValueNotifier<EasySupportChatState> {
         sortOrder: sortOrder,
         sortBy: sortBy,
       );
+      final chronologicalMessages = response.data.reversed.toList();
       value = EasySupportChatState(
         status: EasySupportChatStatus.ready,
-        messages: response.data,
+        messages: chronologicalMessages,
       );
     } catch (error) {
       value = EasySupportChatState(
@@ -90,10 +91,7 @@ class EasySupportChatController extends ValueNotifier<EasySupportChatState> {
       createdAt: DateTime.now().toIso8601String(),
     );
 
-    final updated = <EasySupportChatMessage>[
-      newMessage,
-      ...value.messages,
-    ];
+    final updated = <EasySupportChatMessage>[...value.messages, newMessage];
 
     value = EasySupportChatState(
       status: EasySupportChatStatus.ready,
@@ -117,7 +115,7 @@ class EasySupportChatController extends ValueNotifier<EasySupportChatState> {
 
     value = EasySupportChatState(
       status: EasySupportChatStatus.ready,
-      messages: <EasySupportChatMessage>[message, ...existing],
+      messages: <EasySupportChatMessage>[...existing, message],
     );
   }
 }
