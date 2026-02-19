@@ -360,7 +360,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         body: body,
         chatId: chatId,
         customerId: customerId,
-        unseenCount: 1,
+        // unseenCount: 1,
       );
 
       await _socketService.sendChatMessage(
