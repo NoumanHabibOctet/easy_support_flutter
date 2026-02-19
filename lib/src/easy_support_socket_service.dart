@@ -176,6 +176,23 @@ class EasySupportSocketIoService implements EasySupportSocketService {
 
     _log('chat socket connect start, chat_id=$normalizedChatId');
     final socket = _buildSocket(config);
+    final joinedCompleter = Completer<void>();
+    Timer? joinTimeoutTimer;
+
+    void completeJoin(dynamic payload) {
+      if (joinedCompleter.isCompleted) {
+        return;
+      }
+      final resolvedChatId = _extractChatId(payload);
+      if (resolvedChatId == null || resolvedChatId.trim().isEmpty) {
+        return;
+      }
+      if (resolvedChatId.trim() != normalizedChatId) {
+        return;
+      }
+      _log('chat socket join confirmed for chat_id=$resolvedChatId');
+      joinedCompleter.complete();
+    }
 
     void onChatEvent(dynamic payload) {
       final message = _extractIncomingMessage(
@@ -200,6 +217,9 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       if (_isKnownChatEvent(event)) {
         return;
       }
+      if (event == 'chat_id' || event == 'chatId') {
+        completeJoin(payload);
+      }
       if (_isLikelyChatPayload(payload)) {
         onChatEvent(payload);
       }
@@ -223,6 +243,11 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       );
     }
 
+    void onJoinEvent(dynamic payload) {
+      _log('chat socket join event payload: $payload');
+      completeJoin(payload);
+    }
+
     void onConnectError(dynamic error) {
       final resolvedError = StateError('Socket connect error: $error');
       _log('chat socket connect error: $error');
@@ -238,6 +263,11 @@ class EasySupportSocketIoService implements EasySupportSocketService {
     socket.onAny(onAnyEvent);
     socket.onAnyOutgoing(onAnyOutgoing);
     socket.onConnect(onConnect);
+    socket.on('chat_id', onJoinEvent);
+    socket.on('chatId', onJoinEvent);
+    socket.on('join_chat_response', onJoinEvent);
+    socket.on('join_chat_success', onJoinEvent);
+    socket.on('chat_joined', onJoinEvent);
     socket.on('chat', onChatEvent);
     socket.on('message', onChatEvent);
     socket.on('new_message', onChatEvent);
@@ -251,16 +281,49 @@ class EasySupportSocketIoService implements EasySupportSocketService {
     socket.onError(onSocketError);
     socket.connect();
 
-    return _EasySupportSocketIoChatConnection(
-      socket: socket,
-      onAnyEvent: onAnyEvent,
-      onAnyOutgoing: onAnyOutgoing,
-      onConnect: onConnect,
-      onConnectError: onConnectError,
-      onSocketError: onSocketError,
-      onChatEvent: onChatEvent,
-      logger: _log,
-    );
+    joinTimeoutTimer = Timer(_timeout, () {
+      if (!joinedCompleter.isCompleted) {
+        joinedCompleter.completeError(
+          TimeoutException('join_chat timed out', _timeout),
+        );
+      }
+    });
+
+    try {
+      await joinedCompleter.future;
+
+      return _EasySupportSocketIoChatConnection(
+        socket: socket,
+        onAnyEvent: onAnyEvent,
+        onAnyOutgoing: onAnyOutgoing,
+        onConnect: onConnect,
+        onConnectError: onConnectError,
+        onSocketError: onSocketError,
+        onJoinEvent: onJoinEvent,
+        onChatEvent: onChatEvent,
+        logger: _log,
+      );
+    } catch (error) {
+      onError?.call(error);
+      socket.offAny(onAnyEvent);
+      socket.offAnyOutgoing(onAnyOutgoing);
+      socket.off('chat_id', onJoinEvent);
+      socket.off('chatId', onJoinEvent);
+      socket.off('join_chat_response', onJoinEvent);
+      socket.off('join_chat_success', onJoinEvent);
+      socket.off('chat_joined', onJoinEvent);
+      socket.off('chat', onChatEvent);
+      socket.off('message', onChatEvent);
+      socket.off('new_message', onChatEvent);
+      socket.off('chat_message', onChatEvent);
+      socket.off('customer_message', onChatEvent);
+      socket.off('agent_message', onChatEvent);
+      socket.dispose();
+      socket.disconnect();
+      rethrow;
+    } finally {
+      joinTimeoutTimer.cancel();
+    }
   }
 
   @override
@@ -517,6 +580,7 @@ class _EasySupportSocketIoChatConnection
     required void Function(dynamic data) onConnect,
     required void Function(dynamic error) onConnectError,
     required void Function(dynamic error) onSocketError,
+    required void Function(dynamic payload) onJoinEvent,
     required void Function(dynamic payload) onChatEvent,
     required void Function(String message) logger,
   })  : _socket = socket,
@@ -525,6 +589,7 @@ class _EasySupportSocketIoChatConnection
         _onConnect = onConnect,
         _onConnectError = onConnectError,
         _onSocketError = onSocketError,
+        _onJoinEvent = onJoinEvent,
         _onChatEvent = onChatEvent,
         _logger = logger;
 
@@ -534,6 +599,7 @@ class _EasySupportSocketIoChatConnection
   final void Function(dynamic data) _onConnect;
   final void Function(dynamic error) _onConnectError;
   final void Function(dynamic error) _onSocketError;
+  final void Function(dynamic payload) _onJoinEvent;
   final void Function(dynamic payload) _onChatEvent;
   final void Function(String message) _logger;
 
@@ -664,6 +730,11 @@ class _EasySupportSocketIoChatConnection
     _socket.off('connect', _onConnect);
     _socket.off('connect_error', _onConnectError);
     _socket.off('error', _onSocketError);
+    _socket.off('chat_id', _onJoinEvent);
+    _socket.off('chatId', _onJoinEvent);
+    _socket.off('join_chat_response', _onJoinEvent);
+    _socket.off('join_chat_success', _onJoinEvent);
+    _socket.off('chat_joined', _onJoinEvent);
     _socket.off('chat', _onChatEvent);
     _socket.off('message', _onChatEvent);
     _socket.off('new_message', _onChatEvent);
