@@ -64,7 +64,6 @@ class EasySupportConversationController {
       config: config,
       customerId: resolvedCustomerId,
       apiChatId: response.chatId,
-      channelId: resolvedChannelId,
     );
 
     final session = EasySupportCustomerSession(
@@ -81,13 +80,11 @@ class EasySupportConversationController {
     required EasySupportConfig config,
     required String customerId,
     required String? apiChatId,
-    required String? channelId,
   }) async {
     try {
       return await _socketService.joinChat(
         config: config,
         customerId: customerId,
-        channelId: channelId,
       );
     } catch (_) {
       if (apiChatId != null && apiChatId.trim().isNotEmpty) {

@@ -173,7 +173,6 @@ class _FakeSocketService implements EasySupportSocketService {
   Future<String> joinChat({
     required EasySupportConfig config,
     required String customerId,
-    String? channelId,
   }) async {
     return chatId;
   }
@@ -184,7 +183,6 @@ class _FailingSocketService implements EasySupportSocketService {
   Future<String> joinChat({
     required EasySupportConfig config,
     required String customerId,
-    String? channelId,
   }) async {
     throw StateError('join failed');
   }
