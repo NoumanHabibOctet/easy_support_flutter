@@ -107,7 +107,10 @@ class _EasySupportViewState extends State<EasySupportView> {
         !_isSessionLoading &&
         (!showForm || _areRequiredFieldsFilled(form: form));
 
-    final shouldShowChatScreen = _session.hasCustomerId && _session.hasChatId;
+    final shouldShowChatScreen = !_isSessionLoading &&
+        !_isSubmitting &&
+        _session.hasCustomerId &&
+        _session.hasChatId;
     _printScreenState(shouldShowChatScreen: shouldShowChatScreen);
     if (shouldShowChatScreen) {
       return EasySupportChatView(

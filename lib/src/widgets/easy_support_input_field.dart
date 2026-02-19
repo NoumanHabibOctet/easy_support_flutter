@@ -26,6 +26,7 @@ class EasySupportInputField extends StatelessWidget {
   Widget build(BuildContext context) {
     final starColor =
         EasySupportColorUtils.blend(primaryColor, Colors.white, 0.2);
+    final displayLabel = _normalizeLabel(label);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -34,7 +35,7 @@ class EasySupportInputField extends StatelessWidget {
         children: [
           RichText(
             text: TextSpan(
-              text: label,
+              text: displayLabel,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -91,5 +92,9 @@ class EasySupportInputField extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  static String _normalizeLabel(String value) {
+    return value.trim().replaceFirst(RegExp(r'\s*\*+$'), '');
   }
 }
