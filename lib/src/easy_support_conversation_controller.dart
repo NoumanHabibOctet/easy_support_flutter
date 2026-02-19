@@ -85,6 +85,7 @@ class EasySupportConversationController {
       return await _socketService.joinChat(
         config: config,
         customerId: customerId,
+        chatId: apiChatId,
       );
     } catch (_) {
       if (apiChatId != null && apiChatId.trim().isNotEmpty) {

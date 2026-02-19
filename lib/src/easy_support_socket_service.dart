@@ -12,6 +12,7 @@ abstract class EasySupportSocketService {
   Future<String> joinChat({
     required EasySupportConfig config,
     required String customerId,
+    String? chatId,
   });
 
   Future<EasySupportChatSocketConnection> connectToChat({
@@ -43,6 +44,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
   Future<String> joinChat({
     required EasySupportConfig config,
     required String customerId,
+    String? chatId,
   }) async {
     _log('join_chat start, customer_id=$customerId');
     final socket = _buildSocket(config);
@@ -85,14 +87,13 @@ class EasySupportSocketIoService implements EasySupportSocketService {
 
     socket.onConnect((_) {
       _log('socket connected, emitting join_chat');
-      final channelToken = config.channelToken.trim();
       socket.emitWithAck(
         'join_chat',
-        <String, dynamic>{
-          // 'id': customerId,
-          'customer_id': customerId,
-          if (channelToken.isNotEmpty) 'channel_token': channelToken,
-        },
+        _buildJoinChatPayload(
+          customerId: customerId,
+          channelToken: config.channelToken,
+          chatId: chatId,
+        ),
         ack: completeWithPayload,
       );
     });
@@ -231,14 +232,13 @@ class EasySupportSocketIoService implements EasySupportSocketService {
 
     void onConnect(dynamic _) {
       _log('chat socket connected, emitting join_chat');
-      final channelToken = config.channelToken.trim();
       socket.emit(
         'join_chat',
-        <String, dynamic>{
-          // 'id': customerId,
-          'customer_id': customerId,
-          if (channelToken.isNotEmpty) 'channel_token': channelToken,
-        },
+        _buildJoinChatPayload(
+          customerId: customerId,
+          channelToken: config.channelToken,
+          chatId: normalizedChatId,
+        ),
       );
     }
 
@@ -563,6 +563,28 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       }
     }
     return null;
+  }
+
+  static Map<String, dynamic> _buildJoinChatPayload({
+    required String customerId,
+    required String channelToken,
+    String? chatId,
+  }) {
+    final payload = <String, dynamic>{
+      'customer_id': customerId,
+    };
+
+    final normalizedChatId = chatId?.trim();
+    if (normalizedChatId != null && normalizedChatId.isNotEmpty) {
+      payload['chat_id'] = normalizedChatId;
+    }
+
+    final normalizedChannelToken = channelToken.trim();
+    if (normalizedChannelToken.isNotEmpty) {
+      payload['channel_token'] = normalizedChannelToken;
+    }
+
+    return payload;
   }
 
   void _log(String message) {
