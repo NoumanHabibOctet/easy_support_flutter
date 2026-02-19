@@ -317,7 +317,7 @@ class EasySupportDioRepository implements EasySupportRepository {
     }
 
     final headers = Map<String, String>.from(config.additionalHeaders);
-    headers['channel_key'] = token;
+    headers['channelkey'] = token;
     // headers['channel-key'] = token;
     return headers;
   }
