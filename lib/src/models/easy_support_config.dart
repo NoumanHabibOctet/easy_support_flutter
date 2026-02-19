@@ -30,8 +30,9 @@ class EasySupportConfig {
       channelToken: channelToken,
       apiBaseUrl:
           json['api_base_url'] as String? ?? json['apiBaseUrl'] as String?,
-      channelKey:
-          json['channelkey'] as String? ?? json['channelKey'] as String?,
+      channelKey: json['channel_key'] as String? ??
+          json['channelkey'] as String? ??
+          json['channelKey'] as String?,
       widgetTitle:
           json['widget_title'] as String? ?? json['widgetTitle'] as String?,
       autoOpen: json['auto_open'] as bool? ?? json['autoOpen'] as bool? ?? true,
@@ -60,7 +61,7 @@ class EasySupportConfig {
       'base_url': baseUrl,
       'channel_token': channelToken,
       if (apiBaseUrl != null) 'api_base_url': apiBaseUrl,
-      if (channelKey != null) 'channelkey': channelKey,
+      if (channelKey != null) 'channel_key': channelKey,
       if (widgetTitle != null) 'widget_title': widgetTitle,
       'auto_open': autoOpen,
       'is_emoji_enabled': isEmojiEnabled,
@@ -80,9 +81,19 @@ class EasySupportConfig {
   }
 
   Map<String, String> get resolvedHeaders {
-    final headers = Map<String, String>.from(additionalHeaders);
-    headers['channelkey'] = channelToken;
+    final headers = _sanitizeHeaders(additionalHeaders);
+    headers['channel_key'] = channelToken;
+    headers['channel-key'] = channelToken;
     return headers;
+  }
+
+  static Map<String, String> _sanitizeHeaders(Map<String, String> headers) {
+    final sanitized = Map<String, String>.from(headers);
+    sanitized.remove('channelkey');
+    sanitized.remove('channelKey');
+    sanitized.remove('channel-key');
+    sanitized.remove('channel_key');
+    return sanitized;
   }
 
   Map<String, dynamic> toJavaScriptOptions() {

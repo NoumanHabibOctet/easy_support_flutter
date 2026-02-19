@@ -37,7 +37,12 @@ class EasySupportConversationController {
   Future<EasySupportCustomerSession> startConversation({
     required EasySupportConfig config,
     required EasySupportCustomerSubmission submission,
+    String? channelId,
   }) async {
+    final existingSession = await _localStorage.readSession();
+    final resolvedChannelId =
+        _normalize(channelId) ?? existingSession.channelId;
+
     final action = submission.hasCustomerId
         ? EasySupportCustomerAction.update
         : EasySupportCustomerAction.create;
@@ -59,11 +64,13 @@ class EasySupportConversationController {
       config: config,
       customerId: resolvedCustomerId,
       apiChatId: response.chatId,
+      channelId: resolvedChannelId,
     );
 
     final session = EasySupportCustomerSession(
       customerId: resolvedCustomerId,
       chatId: resolvedChatId,
+      channelId: resolvedChannelId,
     );
 
     await _localStorage.writeSession(session);
@@ -74,11 +81,13 @@ class EasySupportConversationController {
     required EasySupportConfig config,
     required String customerId,
     required String? apiChatId,
+    required String? channelId,
   }) async {
     try {
       return await _socketService.joinChat(
         config: config,
         customerId: customerId,
+        channelId: channelId,
       );
     } catch (_) {
       if (apiChatId != null && apiChatId.trim().isNotEmpty) {
@@ -86,5 +95,16 @@ class EasySupportConversationController {
       }
       rethrow;
     }
+  }
+
+  static String? _normalize(String? value) {
+    if (value == null) {
+      return null;
+    }
+    final normalized = value.trim();
+    if (normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'easy_support_controller.dart';
+import 'easy_support_customer_local_storage.dart';
 import 'easy_support_repository.dart';
 import 'easy_support_screen.dart';
 import 'easy_support_view.dart';
@@ -37,6 +38,7 @@ class EasySupport {
       final resolvedChannelConfiguration = await _ensureReady();
       _config =
           config.mergeWithChannelConfiguration(resolvedChannelConfiguration);
+      await _persistChannelId(resolvedChannelConfiguration.id);
     } catch (error, stackTrace) {
       debugPrint('EasySupport init failed: $error');
       debugPrintStack(stackTrace: stackTrace);
@@ -58,6 +60,7 @@ class EasySupport {
     EasySupportChannelConfiguration? resolvedChannelConfiguration;
     try {
       resolvedChannelConfiguration = await _ensureReady();
+      await _persistChannelId(resolvedChannelConfiguration.id);
     } catch (error, stackTrace) {
       debugPrint('EasySupport open failed: $error');
       debugPrintStack(stackTrace: stackTrace);
@@ -100,5 +103,16 @@ class EasySupport {
 
   static Future<EasySupportChannelConfiguration> _ensureReady() async {
     return _controller.initialize(config);
+  }
+
+  static Future<void> _persistChannelId(String? channelId) async {
+    try {
+      await EasySupportSharedPrefsCustomerLocalStorage().writeChannelId(
+        channelId,
+      );
+      debugPrint('EasySupport channel_id saved: $channelId');
+    } catch (error) {
+      debugPrint('EasySupport failed to save channel_id: $error');
+    }
   }
 }

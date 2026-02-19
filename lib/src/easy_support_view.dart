@@ -316,6 +316,7 @@ class _EasySupportViewState extends State<EasySupportView> {
       final session = await _conversationController.startConversation(
         config: widget.config,
         submission: submission,
+        channelId: widget.channelConfiguration?.id ?? _session.channelId,
       );
       if (!mounted) {
         return;
@@ -429,7 +430,8 @@ class _EasySupportViewState extends State<EasySupportView> {
       }
 
       try {
-        final customerResponse = await _conversationController.fetchCustomerById(
+        final customerResponse =
+            await _conversationController.fetchCustomerById(
           config: widget.config,
           customerId: session.customerId!,
         );

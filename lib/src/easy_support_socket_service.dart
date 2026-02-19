@@ -9,6 +9,7 @@ abstract class EasySupportSocketService {
   Future<String> joinChat({
     required EasySupportConfig config,
     required String customerId,
+    String? channelId,
   });
 }
 
@@ -23,8 +24,9 @@ class EasySupportSocketIoService implements EasySupportSocketService {
   Future<String> joinChat({
     required EasySupportConfig config,
     required String customerId,
+    String? channelId,
   }) async {
-    _log('join_chat start, customer_id=$customerId');
+    _log('join_chat start, customer_id=$customerId, channel_id=$channelId');
     final socket = _buildSocket(config);
     final completer = Completer<String>();
 
@@ -65,7 +67,10 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       socket.emitWithAck(
         'join_chat',
         <String, dynamic>{
+          'id': customerId,
           'customer_id': customerId,
+          if (channelId != null && channelId.trim().isNotEmpty)
+            'channel_id': channelId.trim(),
         },
         ack: completeWithPayload,
       );
