@@ -50,6 +50,10 @@ class _EasySupportViewState extends State<EasySupportView> {
   EasySupportCustomerSession _session = const EasySupportCustomerSession();
   bool _isSessionLoading = true;
   bool _isSubmitting = false;
+  bool _isApplyingPrefill = false;
+  bool _hasUserEditedEmail = false;
+  bool _hasUserEditedName = false;
+  bool _hasUserEditedPhone = false;
   String? _lastPrintedScreenState;
 
   @override
@@ -60,17 +64,17 @@ class _EasySupportViewState extends State<EasySupportView> {
       repository: _repository,
       localStorage: EasySupportSharedPrefsCustomerLocalStorage(),
     );
-    _emailController.addListener(_onFormChanged);
-    _nameController.addListener(_onFormChanged);
-    _phoneController.addListener(_onFormChanged);
+    _emailController.addListener(_onEmailChanged);
+    _nameController.addListener(_onNameChanged);
+    _phoneController.addListener(_onPhoneChanged);
     _loadCustomerSession();
   }
 
   @override
   void dispose() {
-    _emailController.removeListener(_onFormChanged);
-    _nameController.removeListener(_onFormChanged);
-    _phoneController.removeListener(_onFormChanged);
+    _emailController.removeListener(_onEmailChanged);
+    _nameController.removeListener(_onNameChanged);
+    _phoneController.removeListener(_onPhoneChanged);
     _emailController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
@@ -365,6 +369,27 @@ class _EasySupportViewState extends State<EasySupportView> {
     return true;
   }
 
+  void _onEmailChanged() {
+    if (!_isApplyingPrefill) {
+      _hasUserEditedEmail = true;
+    }
+    _onFormChanged();
+  }
+
+  void _onNameChanged() {
+    if (!_isApplyingPrefill) {
+      _hasUserEditedName = true;
+    }
+    _onFormChanged();
+  }
+
+  void _onPhoneChanged() {
+    if (!_isApplyingPrefill) {
+      _hasUserEditedPhone = true;
+    }
+    _onFormChanged();
+  }
+
   void _onFormChanged() {
     if (!mounted) {
       return;
@@ -445,23 +470,35 @@ class _EasySupportViewState extends State<EasySupportView> {
     final name = customer.name?.trim();
     final phone = customer.phone?.trim();
 
-    if (form.isEmailEnabled == true &&
-        email != null &&
-        email.isNotEmpty &&
-        _emailController.text.trim().isEmpty) {
-      _emailController.text = email;
+    _isApplyingPrefill = true;
+    try {
+      if (form.isEmailEnabled == true &&
+          email != null &&
+          email.isNotEmpty &&
+          _emailController.text.trim().isEmpty &&
+          !_hasUserEditedEmail) {
+        _emailController.text = email;
+      }
+      if (form.isNameEnabled == true &&
+          name != null &&
+          name.isNotEmpty &&
+          _nameController.text.trim().isEmpty &&
+          !_hasUserEditedName) {
+        _nameController.text = name;
+      }
+      if (form.isPhoneEnabled == true &&
+          phone != null &&
+          phone.isNotEmpty &&
+          _phoneController.text.trim().isEmpty &&
+          !_hasUserEditedPhone) {
+        _phoneController.text = phone;
+      }
+    } finally {
+      _isApplyingPrefill = false;
     }
-    if (form.isNameEnabled == true &&
-        name != null &&
-        name.isNotEmpty &&
-        _nameController.text.trim().isEmpty) {
-      _nameController.text = name;
-    }
-    if (form.isPhoneEnabled == true &&
-        phone != null &&
-        phone.isNotEmpty &&
-        _phoneController.text.trim().isEmpty) {
-      _phoneController.text = phone;
+
+    if (mounted) {
+      setState(() {});
     }
   }
 
