@@ -4,12 +4,20 @@ import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import 'models/easy_support_config.dart';
+import 'models/easy_support_chat_emit_payload.dart';
 
 abstract class EasySupportSocketService {
   Future<String> joinChat({
     required EasySupportConfig config,
     required String customerId,
   });
+
+  Future<void> sendChatMessage({
+    required EasySupportConfig config,
+    required EasySupportChatEmitPayload payload,
+  }) async {
+    throw UnimplementedError('sendChatMessage is not implemented.');
+  }
 }
 
 class EasySupportSocketIoService implements EasySupportSocketService {
@@ -136,6 +144,73 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       socket.off('chat_id', onJoinEvent);
       socket.off('chatId', onJoinEvent);
       _log('socket closing for join_chat');
+      socket.dispose();
+      socket.disconnect();
+    }
+  }
+
+  @override
+  Future<void> sendChatMessage({
+    required EasySupportConfig config,
+    required EasySupportChatEmitPayload payload,
+  }) async {
+    _log('chat emit start, chat_id=${payload.chatId}');
+    final socket = _buildSocket(config);
+    final completer = Completer<void>();
+
+    void complete() {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
+
+    void failWith(Object error) {
+      _log('chat emit failed: $error');
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      }
+    }
+
+    void onAnyEvent(String event, dynamic data) {
+      _log('socket event[$event]: $data');
+    }
+
+    void onAnyOutgoing(String event, dynamic data) {
+      _log('socket outgoing[$event]: $data');
+    }
+
+    socket.onAny(onAnyEvent);
+    socket.onAnyOutgoing(onAnyOutgoing);
+    socket.onConnect((_) {
+      _log('socket connected, emitting chat');
+      socket.emit('chat', payload.toJson());
+      complete();
+    });
+    socket.onConnectError((dynamic error) {
+      failWith(StateError('Socket connect error: $error'));
+    });
+    socket.onError((dynamic error) {
+      failWith(StateError('Socket error: $error'));
+    });
+
+    final timer = Timer(_timeout, () {
+      failWith(
+        TimeoutException(
+          'chat emit timed out',
+          _timeout,
+        ),
+      );
+    });
+
+    socket.connect();
+
+    try {
+      await completer.future;
+    } finally {
+      timer.cancel();
+      socket.offAny(onAnyEvent);
+      socket.offAnyOutgoing(onAnyOutgoing);
+      _log('socket closing for chat emit');
       socket.dispose();
       socket.disconnect();
     }

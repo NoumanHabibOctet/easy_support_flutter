@@ -1,6 +1,7 @@
 library easy_support_flutter;
 
 export 'src/models/easy_support_channel_configuration.dart';
+export 'src/models/easy_support_chat_emit_payload.dart';
 export 'src/models/easy_support_chat_message.dart';
 export 'src/models/easy_support_chat_messages_page_info.dart';
 export 'src/models/easy_support_chat_messages_response.dart';

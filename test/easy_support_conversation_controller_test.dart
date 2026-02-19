@@ -176,6 +176,12 @@ class _FakeSocketService implements EasySupportSocketService {
   }) async {
     return chatId;
   }
+
+  @override
+  Future<void> sendChatMessage({
+    required EasySupportConfig config,
+    required EasySupportChatEmitPayload payload,
+  }) async {}
 }
 
 class _FailingSocketService implements EasySupportSocketService {
@@ -185,5 +191,13 @@ class _FailingSocketService implements EasySupportSocketService {
     required String customerId,
   }) async {
     throw StateError('join failed');
+  }
+
+  @override
+  Future<void> sendChatMessage({
+    required EasySupportConfig config,
+    required EasySupportChatEmitPayload payload,
+  }) async {
+    throw StateError('chat send failed');
   }
 }

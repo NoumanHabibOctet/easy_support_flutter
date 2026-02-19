@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'easy_support_chat_controller.dart';
 import 'easy_support_repository.dart';
+import 'easy_support_socket_service.dart';
+import 'models/easy_support_chat_emit_payload.dart';
 import 'models/easy_support_chat_message.dart';
 import 'models/easy_support_config.dart';
 import 'models/easy_support_customer_session.dart';
@@ -35,7 +37,9 @@ class EasySupportChatView extends StatefulWidget {
 
 class _EasySupportChatViewState extends State<EasySupportChatView> {
   late final EasySupportChatController _controller;
+  late final EasySupportSocketService _socketService;
   final TextEditingController _messageController = TextEditingController();
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -43,11 +47,14 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     _controller = EasySupportChatController(
       repository: widget.repository ?? EasySupportDioRepository(),
     );
+    _socketService = EasySupportSocketIoService();
+    _messageController.addListener(_onMessageChanged);
     _loadMessages();
   }
 
   @override
   void dispose() {
+    _messageController.removeListener(_onMessageChanged);
     _messageController.dispose();
     _controller.dispose();
     super.dispose();
@@ -169,6 +176,8 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
                       Expanded(
                         child: TextField(
                           controller: _messageController,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _sendMessage(),
                           decoration: const InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Type your message',
@@ -182,7 +191,29 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
                       Icon(Icons.sentiment_satisfied,
                           color: Colors.grey.shade600),
                       const SizedBox(width: 8),
-                      Icon(Icons.send_rounded, color: Colors.grey.shade600),
+                      IconButton(
+                        onPressed:
+                            _isSending || _messageController.text.trim().isEmpty
+                                ? null
+                                : _sendMessage,
+                        icon: _isSending
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.grey.shade600,
+                                  ),
+                                ),
+                              )
+                            : Icon(
+                                Icons.send_rounded,
+                                color: _messageController.text.trim().isEmpty
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade700,
+                              ),
+                      ),
                     ],
                   ),
                 ),
@@ -302,5 +333,69 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
       sortOrder: 'desc',
       sortBy: 'created_at',
     );
+  }
+
+  Future<void> _sendMessage() async {
+    final body = _messageController.text.trim();
+    if (body.isEmpty || _isSending) {
+      return;
+    }
+
+    final chatId = widget.session.chatId;
+    final customerId = widget.session.customerId;
+    if (chatId == null ||
+        chatId.trim().isEmpty ||
+        customerId == null ||
+        customerId.trim().isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isSending = true;
+    });
+
+    try {
+      final payload = EasySupportChatEmitPayload(
+        author: '',
+        body: body,
+        chatId: chatId,
+        customerId: customerId,
+        unseenCount: 1,
+      );
+
+      await _socketService.sendChatMessage(
+        config: widget.config,
+        payload: payload,
+      );
+
+      _controller.addLocalCustomerMessage(
+        customerId: customerId,
+        chatId: chatId,
+        body: body,
+      );
+      _messageController.clear();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: Text('Message send failed: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
+    }
+  }
+
+  void _onMessageChanged() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
   }
 }

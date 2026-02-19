@@ -69,4 +69,35 @@ class EasySupportChatController extends ValueNotifier<EasySupportChatState> {
       );
     }
   }
+
+  void addLocalCustomerMessage({
+    required String customerId,
+    required String chatId,
+    required String body,
+  }) {
+    final content = body.trim();
+    if (content.isEmpty) {
+      return;
+    }
+
+    final newMessage = EasySupportChatMessage(
+      id: 'local_${DateTime.now().microsecondsSinceEpoch}',
+      chatId: chatId,
+      customerId: customerId,
+      content: content,
+      type: 'message',
+      isSeen: false,
+      createdAt: DateTime.now().toIso8601String(),
+    );
+
+    final updated = <EasySupportChatMessage>[
+      newMessage,
+      ...value.messages,
+    ];
+
+    value = EasySupportChatState(
+      status: EasySupportChatStatus.ready,
+      messages: updated,
+    );
+  }
 }
