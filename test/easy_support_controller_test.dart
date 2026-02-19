@@ -29,7 +29,8 @@ void main() {
     expect(controller.value.status, EasySupportInitStatus.error);
   });
 
-  test('controller retries on network error and succeeds automatically', () async {
+  test('controller retries on network error and succeeds automatically',
+      () async {
     final controller = EasySupportController(
       repository: _FakeNetworkThenSuccessRepository(),
       retryScheduler: EasySupportRetryScheduler(
@@ -56,6 +57,15 @@ class _FakeSuccessRepository implements EasySupportRepository {
       welcomeHeading: 'Hi there ! How can we help you ',
     );
   }
+
+  @override
+  Future<EasySupportCustomerResponse> postCustomer({
+    required EasySupportConfig config,
+    required EasySupportCustomerAction action,
+    required Map<String, dynamic> body,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _FakeFailureRepository implements EasySupportRepository {
@@ -67,6 +77,15 @@ class _FakeFailureRepository implements EasySupportRepository {
       message: 'GET failed',
       statusCode: 500,
     );
+  }
+
+  @override
+  Future<EasySupportCustomerResponse> postCustomer({
+    required EasySupportConfig config,
+    required EasySupportCustomerAction action,
+    required Map<String, dynamic> body,
+  }) {
+    throw UnimplementedError();
   }
 }
 
@@ -90,5 +109,14 @@ class _FakeNetworkThenSuccessRepository implements EasySupportRepository {
       name: "Noman's Channel",
       token: 'api_test_123',
     );
+  }
+
+  @override
+  Future<EasySupportCustomerResponse> postCustomer({
+    required EasySupportConfig config,
+    required EasySupportCustomerAction action,
+    required Map<String, dynamic> body,
+  }) {
+    throw UnimplementedError();
   }
 }

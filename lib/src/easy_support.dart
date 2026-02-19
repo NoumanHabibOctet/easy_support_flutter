@@ -34,7 +34,8 @@ class EasySupport {
     _config = config;
     _controller.reset();
     final resolvedChannelConfiguration = await _ensureReady();
-    _config = config.mergeWithChannelConfiguration(resolvedChannelConfiguration);
+    _config =
+        config.mergeWithChannelConfiguration(resolvedChannelConfiguration);
   }
 
   static Future<void> open(

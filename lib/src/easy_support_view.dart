@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import 'easy_support_chat_view.dart';
+import 'easy_support_conversation_controller.dart';
+import 'easy_support_customer_local_storage.dart';
+import 'easy_support_repository.dart';
 import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_config.dart';
+import 'models/easy_support_customer_session.dart';
+import 'models/easy_support_customer_submission.dart';
 import 'widgets/easy_support_action_bar.dart';
 import 'widgets/easy_support_color_utils.dart';
 import 'widgets/easy_support_form_card.dart';
@@ -36,13 +42,23 @@ class _EasySupportViewState extends State<EasySupportView> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  late final EasySupportConversationController _conversationController;
+
+  EasySupportCustomerSession _session = const EasySupportCustomerSession();
+  bool _isSessionLoading = true;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
+    _conversationController = EasySupportConversationController(
+      repository: EasySupportDioRepository(),
+      localStorage: EasySupportSharedPrefsCustomerLocalStorage(),
+    );
     _emailController.addListener(_onFormChanged);
     _nameController.addListener(_onFormChanged);
     _phoneController.addListener(_onFormChanged);
+    _loadCustomerSession();
   }
 
   @override
@@ -78,8 +94,24 @@ class _EasySupportViewState extends State<EasySupportView> {
         channel?.isGreetingEnabled == true ? channel?.greetingMessage : null;
     final form = channel?.chatForm;
     final showForm = channel?.hasActiveForm == true && form != null;
-    final canStartConversation =
-        !showForm || _areRequiredFieldsFilled(form: form);
+    final canStartConversation = !_isSubmitting &&
+        !_isSessionLoading &&
+        (!showForm || _areRequiredFieldsFilled(form: form));
+
+    if (_isSessionLoading) {
+      return _buildLoadingState();
+    }
+
+    final shouldShowChatScreen = _session.hasCustomerId;
+    if (shouldShowChatScreen) {
+      return EasySupportChatView(
+        title: title,
+        primaryColor: primaryColor,
+        onPrimaryColor: onPrimaryColor,
+        isFullScreen: widget.isFullScreen,
+        onClose: () => Navigator.of(context).maybePop(),
+      );
+    }
 
     final content = DecoratedBox(
       decoration: const BoxDecoration(
@@ -135,9 +167,12 @@ class _EasySupportViewState extends State<EasySupportView> {
           ),
           EasySupportActionBar(
             onPressed: canStartConversation
-                ? () => _onStartConversationPressed(showForm: showForm)
+                ? () => _onStartConversationPressed(
+                      showForm: showForm,
+                      form: form,
+                    )
                 : null,
-            label: 'Start Conversation',
+            label: _isSubmitting ? 'Please wait...' : 'Start Conversation',
             actionColor: actionButtonColor,
             onActionColor: EasySupportColorUtils.onColor(actionButtonColor),
             bottomPadding: MediaQuery.of(context).padding.bottom,
@@ -229,14 +264,84 @@ class _EasySupportViewState extends State<EasySupportView> {
     );
   }
 
-  void _onStartConversationPressed({required bool showForm}) {
+  Widget _buildLoadingState() {
+    const content = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF7F8FC),
+            Color(0xFFF2F4F8),
+          ],
+        ),
+      ),
+      child: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    if (widget.isFullScreen) {
+      return content;
+    }
+
+    return const ClipRRect(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      child: content,
+    );
+  }
+
+  Future<void> _onStartConversationPressed({
+    required bool showForm,
+    required EasySupportChatFormConfiguration? form,
+  }) async {
     if (showForm) {
       final valid = _formKey.currentState?.validate() ?? false;
       if (!valid) {
         return;
       }
     }
-    Navigator.of(context).maybePop();
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final submission = EasySupportCustomerSubmission(
+        customerId: _session.customerId,
+        name: form?.isNameEnabled == true ? _nameController.text : null,
+        email: form?.isEmailEnabled == true ? _emailController.text : null,
+        phone: form?.isPhoneEnabled == true ? _phoneController.text : null,
+      );
+
+      final session = await _conversationController.startConversation(
+        config: widget.config,
+        submission: submission,
+      );
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _session = session;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text('Start conversation failed: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   bool _areRequiredFieldsFilled({
@@ -272,6 +377,32 @@ class _EasySupportViewState extends State<EasySupportView> {
       return;
     }
     setState(() {});
+  }
+
+  Future<void> _loadCustomerSession() async {
+    try {
+      final session = await _conversationController.loadSession();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _session = session;
+        _isSessionLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isSessionLoading = false;
+      });
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text('Session load failed: $error'),
+        ),
+      );
+    }
   }
 
   static bool _isValidEmail(String email) {

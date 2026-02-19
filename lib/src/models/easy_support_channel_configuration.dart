@@ -22,6 +22,13 @@ class EasySupportChannelKeyResponse {
 
   final bool success;
   final EasySupportChannelConfiguration? data;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'success': success,
+      if (data != null) 'data': data!.toJson(),
+    };
+  }
 }
 
 class EasySupportChannelConfiguration {
@@ -118,6 +125,36 @@ class EasySupportChannelConfiguration {
   final String? updatedAt;
   final EasySupportChatFormConfiguration? chatForm;
 
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (details != null) 'details': details,
+      if (welcomeHeading != null) 'welcome_heading': welcomeHeading,
+      if (welcomeTagline != null) 'welcome_tagline': welcomeTagline,
+      if (isGreetingEnabled != null) 'is_greeting_enabled': isGreetingEnabled,
+      if (greetingMessage != null) 'greeting_message': greetingMessage,
+      if (widgetColor != null) 'widget_color': widgetColor,
+      if (widgetPosition != null) 'widget_position': widgetPosition,
+      if (isFormEnabled != null) 'is_form_enabled': isFormEnabled,
+      if (isEmojiEnabled != null) 'is_emoji_enabled': isEmojiEnabled,
+      if (isMediaEnabled != null) 'is_media_enabled': isMediaEnabled,
+      if (isFeedbackEnabled != null) 'is_feedback_enabled': isFeedbackEnabled,
+      if (feedbackMessage != null) 'feedback_message': feedbackMessage,
+      if (feedbackDisplayType != null)
+        'feedback_display_type': feedbackDisplayType,
+      if (websiteToken != null) 'website_token': websiteToken,
+      if (script != null) 'script': script,
+      if (type != null) 'type': type,
+      if (domain != null) 'domain': domain,
+      if (token != null) 'token': token,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (chatForm != null) 'chat_form': chatForm!.toJson(),
+    };
+  }
+
   bool get hasActiveForm {
     final form = chatForm;
     if (form == null) {
@@ -195,6 +232,32 @@ class EasySupportChatFormConfiguration {
   final String? nameFieldPlaceholder;
   final String? createdAt;
   final String? updatedAt;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if (id != null) 'id': id,
+      if (channelId != null) 'channel_id': channelId,
+      if (formMessage != null) 'form_message': formMessage,
+      if (isActive != null) 'is_active': isActive,
+      if (isEmailEnabled != null) 'is_email_enabled': isEmailEnabled,
+      if (isEmailRequired != null) 'is_email_required': isEmailRequired,
+      if (emailFieldLabel != null) 'email_field_label': emailFieldLabel,
+      if (emailFieldPlaceholder != null)
+        'email_field_placeholder': emailFieldPlaceholder,
+      if (isPhoneEnabled != null) 'is_phone_enabled': isPhoneEnabled,
+      if (isPhoneRequired != null) 'is_phone_required': isPhoneRequired,
+      if (phoneFieldLabel != null) 'phone_field_label': phoneFieldLabel,
+      if (phoneFieldPlaceholder != null)
+        'phone_field_placeholder': phoneFieldPlaceholder,
+      if (isNameEnabled != null) 'is_name_enabled': isNameEnabled,
+      if (isNameRequired != null) 'is_name_required': isNameRequired,
+      if (nameFieldLabel != null) 'name_field_label': nameFieldLabel,
+      if (nameFieldPlaceholder != null)
+        'name_field_placeholder': nameFieldPlaceholder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    };
+  }
 }
 
 extension EasySupportConfigRuntimeMerge on EasySupportConfig {

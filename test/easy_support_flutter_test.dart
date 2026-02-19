@@ -116,7 +116,9 @@ void main() {
     expect(mergedConfig.isMediaEnabled, false);
   });
 
-  test('shows chat form when chat_form is active even if is_form_enabled is false', () {
+  test(
+      'shows chat form when chat_form is active even if is_form_enabled is false',
+      () {
     final response = EasySupportChannelKeyResponse.fromJson(<String, dynamic>{
       'success': true,
       'data': <String, dynamic>{
@@ -130,5 +132,101 @@ void main() {
     });
 
     expect(response.data?.hasActiveForm, true);
+  });
+
+  test('parses create-customer response with result object', () {
+    final response = EasySupportCustomerResponse.fromJson(<String, dynamic>{
+      'success': true,
+      'result': <String, dynamic>{
+        'id': 'c3034058-70d0-491e-8e8e-1f48a6aebf1f',
+        'name': 'John Doe',
+        'email': 'john.doe@email.com',
+        'phone': '+923001234567',
+        'is_blocked': false,
+        'workspace_id': '89feb5a3-c054-4111-94f5-eb3a58f409e2',
+        'channel_id': 'ad7ccf1c-7250-410a-b741-05103e695b37',
+        'created_at': '2026-02-19T06:02:07.899Z',
+        'updated_at': '2026-02-19T06:02:07.899Z',
+      },
+    });
+
+    expect(response.success, true);
+    expect(response.customerId, 'c3034058-70d0-491e-8e8e-1f48a6aebf1f');
+    expect(response.result?.name, 'John Doe');
+    expect(response.result?.email, 'john.doe@email.com');
+    expect(response.result?.phone, '+923001234567');
+  });
+
+  test('customer models support toJson and fromJson', () {
+    final session = EasySupportCustomerSession.fromJson(<String, dynamic>{
+      'customer_id': 'customer_1',
+      'chat_id': 'chat_1',
+    });
+    expect(session.toJson(), <String, dynamic>{
+      'customer_id': 'customer_1',
+      'chat_id': 'chat_1',
+    });
+
+    final result = EasySupportCustomerResult.fromJson(<String, dynamic>{
+      'id': 'customer_1',
+      'name': 'John',
+      'email': 'john@example.com',
+    });
+    expect(result.toJson()['id'], 'customer_1');
+    expect(result.toJson()['name'], 'John');
+
+    final submission = EasySupportCustomerSubmission.fromJson(
+      <String, dynamic>{
+        'customer_id': 'customer_1',
+        'name': 'John',
+        'email': 'john@example.com',
+      },
+    );
+    expect(submission.toJson()['customer_id'], 'customer_1');
+    expect(
+      EasySupportCustomerActionJson.fromJson('update'),
+      EasySupportCustomerAction.update,
+    );
+    expect(EasySupportCustomerAction.update.toJson(), 'update');
+  });
+
+  test('channel models support toJson and fromJson', () {
+    final response = EasySupportChannelKeyResponse.fromJson(<String, dynamic>{
+      'success': true,
+      'data': <String, dynamic>{
+        'id': 'channel_1',
+        'name': 'Channel',
+        'chat_form': <String, dynamic>{
+          'id': 'form_1',
+          'is_active': true,
+          'is_name_enabled': true,
+        },
+      },
+    });
+
+    final serialized = response.toJson();
+    expect(serialized['success'], true);
+    expect((serialized['data'] as Map<String, dynamic>)['id'], 'channel_1');
+    expect(
+      ((serialized['data'] as Map<String, dynamic>)['chat_form']
+          as Map<String, dynamic>)['id'],
+      'form_1',
+    );
+  });
+
+  test('config model supports toJson and fromJson', () {
+    final config = EasySupportConfig.fromJson(<String, dynamic>{
+      'base_url': 'https://api.example.com',
+      'channel_token': 'api_test_123',
+      'additional_headers': <String, dynamic>{'x-test': 1},
+    });
+
+    final serialized = config.toJson();
+    expect(serialized['base_url'], 'https://api.example.com');
+    expect(serialized['channel_token'], 'api_test_123');
+    expect(
+      serialized['additional_headers'],
+      <String, String>{'x-test': '1'},
+    );
   });
 }

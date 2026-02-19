@@ -29,9 +29,9 @@ class EasySupportInitState {
   const EasySupportInitState.readyWith(
     EasySupportChannelConfiguration channelConfiguration,
   ) : this._(
-         status: EasySupportInitStatus.ready,
-         channelConfiguration: channelConfiguration,
-       );
+          status: EasySupportInitStatus.ready,
+          channelConfiguration: channelConfiguration,
+        );
 
   const EasySupportInitState.error(Object error)
       : this._(status: EasySupportInitStatus.error, error: error);
@@ -47,8 +47,7 @@ class EasySupportController extends ValueNotifier<EasySupportInitState> {
   EasySupportController({
     required EasySupportRepository repository,
     EasySupportRetryScheduler? retryScheduler,
-  })
-      : _repository = repository,
+  })  : _repository = repository,
         _retryScheduler = retryScheduler ?? EasySupportRetryScheduler(),
         super(const EasySupportInitState.initial());
 
@@ -74,24 +73,22 @@ class EasySupportController extends ValueNotifier<EasySupportInitState> {
     }
 
     value = const EasySupportInitState.loading();
-    final initialization = _repository
-        .fetchChannelKey(config)
-        .then((channelConfiguration) {
-          _retryScheduler.stop();
-          value = EasySupportInitState.readyWith(channelConfiguration);
-          return channelConfiguration;
-        })
-        .catchError((Object error, StackTrace stackTrace) {
-          value = EasySupportInitState.error(error);
-          _inFlightInitialization = null;
+    final initialization =
+        _repository.fetchChannelKey(config).then((channelConfiguration) {
+      _retryScheduler.stop();
+      value = EasySupportInitState.readyWith(channelConfiguration);
+      return channelConfiguration;
+    }).catchError((Object error, StackTrace stackTrace) {
+      value = EasySupportInitState.error(error);
+      _inFlightInitialization = null;
 
-          if (_isRetriableNetworkError(error)) {
-            return _waitForNetworkAndRetry();
-          }
+      if (_isRetriableNetworkError(error)) {
+        return _waitForNetworkAndRetry();
+      }
 
-          _failPendingRetry(error);
-          throw error;
-        });
+      _failPendingRetry(error);
+      throw error;
+    });
 
     _inFlightInitialization = initialization;
     return initialization;
