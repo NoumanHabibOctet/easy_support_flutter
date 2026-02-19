@@ -124,6 +124,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
     socket.on('join_chat_response', onJoinEvent);
     socket.on('join_chat_success', onJoinEvent);
     socket.on('chat_joined', onJoinEvent);
+    socket.on('join_chat', onJoinEvent);
     socket.on('chat_id', onJoinEvent);
     // socket.on('chatId', onJoinEvent);
     socket.onConnectError((dynamic error) {
@@ -154,6 +155,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       socket.off('join_chat_response', onJoinEvent);
       socket.off('join_chat_success', onJoinEvent);
       socket.off('chat_joined', onJoinEvent);
+      socket.off('join_chat', onJoinEvent);
       socket.off('chat_id', onJoinEvent);
       socket.off('chatId', onJoinEvent);
       _log('socket closing for join_chat');
@@ -185,13 +187,15 @@ class EasySupportSocketIoService implements EasySupportSocketService {
         return;
       }
       final resolvedChatId = _extractChatId(payload);
-      if (resolvedChatId == null || resolvedChatId.trim().isEmpty) {
+      if (resolvedChatId != null &&
+          resolvedChatId.trim().isNotEmpty &&
+          resolvedChatId.trim() != normalizedChatId) {
+        _log(
+          'chat socket join ignored for other chat_id=$resolvedChatId',
+        );
         return;
       }
-      if (resolvedChatId.trim() != normalizedChatId) {
-        return;
-      }
-      _log('chat socket join confirmed for chat_id=$resolvedChatId');
+      _log('chat socket join confirmed for chat_id=$normalizedChatId');
       joinedCompleter.complete();
     }
 
@@ -213,16 +217,34 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       onMessage(message);
     }
 
-    void onAnyEvent(String event, dynamic payload) {
-      _log('socket event[$event]: $payload');
-      if (_isKnownChatEvent(event)) {
+    void onSystemEvent(dynamic payload) {
+      final message = _extractIncomingMessage(
+        payload,
+        fallbackChatId: normalizedChatId,
+        forcedType: 'notification',
+      );
+      if (message == null) {
         return;
       }
-      if (event == 'chat_id' || event == 'chatId') {
-        completeJoin(payload);
+
+      final messageChatId = message.chatId?.trim();
+      if (messageChatId != null &&
+          messageChatId.isNotEmpty &&
+          messageChatId != normalizedChatId) {
+        return;
       }
-      if (_isLikelyChatPayload(payload)) {
-        onChatEvent(payload);
+      onMessage(message);
+    }
+
+    void onAnyEvent(String event, dynamic payload) {
+      _log('socket event[$event]: $payload');
+      if (event == 'chat_id' ||
+          event == 'chatId' ||
+          event == 'join_chat' ||
+          event == 'join_chat_success' ||
+          event == 'join_chat_response' ||
+          event == 'chat_joined') {
+        completeJoin(payload);
       }
     }
 
@@ -264,15 +286,12 @@ class EasySupportSocketIoService implements EasySupportSocketService {
     socket.onConnect(onConnect);
     socket.on('chat_id', onJoinEvent);
     socket.on('chatId', onJoinEvent);
+    socket.on('join_chat', onJoinEvent);
     socket.on('join_chat_response', onJoinEvent);
     socket.on('join_chat_success', onJoinEvent);
     socket.on('chat_joined', onJoinEvent);
     socket.on('chat', onChatEvent);
-    socket.on('message', onChatEvent);
-    socket.on('new_message', onChatEvent);
-    socket.on('chat_message', onChatEvent);
-    socket.on('customer_message', onChatEvent);
-    socket.on('agent_message', onChatEvent);
+    socket.on('system', onSystemEvent);
     socket.onDisconnect((dynamic reason) {
       _log('chat socket disconnected: $reason');
     });
@@ -300,6 +319,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
         onSocketError: onSocketError,
         onJoinEvent: onJoinEvent,
         onChatEvent: onChatEvent,
+        onSystemEvent: onSystemEvent,
         logger: _log,
       );
     } catch (error) {
@@ -308,15 +328,12 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       socket.offAnyOutgoing(onAnyOutgoing);
       socket.off('chat_id', onJoinEvent);
       socket.off('chatId', onJoinEvent);
+      socket.off('join_chat', onJoinEvent);
       socket.off('join_chat_response', onJoinEvent);
       socket.off('join_chat_success', onJoinEvent);
       socket.off('chat_joined', onJoinEvent);
       socket.off('chat', onChatEvent);
-      socket.off('message', onChatEvent);
-      socket.off('new_message', onChatEvent);
-      socket.off('chat_message', onChatEvent);
-      socket.off('customer_message', onChatEvent);
-      socket.off('agent_message', onChatEvent);
+      socket.off('system', onSystemEvent);
       socket.dispose();
       socket.disconnect();
       rethrow;
@@ -456,12 +473,14 @@ class EasySupportSocketIoService implements EasySupportSocketService {
   static EasySupportChatMessage? _extractIncomingMessage(
     dynamic payload, {
     required String fallbackChatId,
+    String? forcedType,
   }) {
     if (payload is List) {
       for (final item in payload) {
         final parsed = _extractIncomingMessage(
           item,
           fallbackChatId: fallbackChatId,
+          forcedType: forcedType,
         );
         if (parsed != null) {
           return parsed;
@@ -480,6 +499,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       final fromNested = _extractIncomingMessage(
         nestedData,
         fallbackChatId: fallbackChatId,
+        forcedType: forcedType,
       );
       if (fromNested != null) {
         return fromNested;
@@ -488,7 +508,8 @@ class EasySupportSocketIoService implements EasySupportSocketService {
 
     final content =
         _readString(map, const <String>['content', 'body', 'message']) ?? '';
-    final type = _readString(map, const <String>['type']) ?? 'message';
+    final type =
+        forcedType ?? _readString(map, const <String>['type']) ?? 'message';
     final normalizedContent = content.trim();
     final isNotification = type == 'notification';
     if (normalizedContent.isEmpty && !isNotification) {
@@ -527,32 +548,6 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       return Map<String, dynamic>.from(value);
     }
     return null;
-  }
-
-  static bool _isLikelyChatPayload(dynamic payload) {
-    final map = _asMap(payload);
-    if (map == null) {
-      return false;
-    }
-    return map.containsKey('chat_id') ||
-        map.containsKey('chatId') ||
-        map.containsKey('body') ||
-        map.containsKey('content') ||
-        map.containsKey('message');
-  }
-
-  static bool _isKnownChatEvent(String event) {
-    switch (event) {
-      case 'chat':
-      case 'message':
-      case 'new_message':
-      case 'chat_message':
-      case 'customer_message':
-      case 'agent_message':
-        return true;
-      default:
-        return false;
-    }
   }
 
   static String? _readString(Map<String, dynamic> map, List<String> keys) {
@@ -603,6 +598,7 @@ class _EasySupportSocketIoChatConnection
     required void Function(dynamic error) onSocketError,
     required void Function(dynamic payload) onJoinEvent,
     required void Function(dynamic payload) onChatEvent,
+    required void Function(dynamic payload) onSystemEvent,
     required void Function(String message) logger,
   })  : _socket = socket,
         _onAnyEvent = onAnyEvent,
@@ -612,6 +608,7 @@ class _EasySupportSocketIoChatConnection
         _onSocketError = onSocketError,
         _onJoinEvent = onJoinEvent,
         _onChatEvent = onChatEvent,
+        _onSystemEvent = onSystemEvent,
         _logger = logger;
 
   final io.Socket _socket;
@@ -622,6 +619,7 @@ class _EasySupportSocketIoChatConnection
   final void Function(dynamic error) _onSocketError;
   final void Function(dynamic payload) _onJoinEvent;
   final void Function(dynamic payload) _onChatEvent;
+  final void Function(dynamic payload) _onSystemEvent;
   final void Function(String message) _logger;
 
   @override
@@ -753,15 +751,12 @@ class _EasySupportSocketIoChatConnection
     _socket.off('error', _onSocketError);
     _socket.off('chat_id', _onJoinEvent);
     _socket.off('chatId', _onJoinEvent);
+    _socket.off('join_chat', _onJoinEvent);
     _socket.off('join_chat_response', _onJoinEvent);
     _socket.off('join_chat_success', _onJoinEvent);
     _socket.off('chat_joined', _onJoinEvent);
     _socket.off('chat', _onChatEvent);
-    _socket.off('message', _onChatEvent);
-    _socket.off('new_message', _onChatEvent);
-    _socket.off('chat_message', _onChatEvent);
-    _socket.off('customer_message', _onChatEvent);
-    _socket.off('agent_message', _onChatEvent);
+    _socket.off('system', _onSystemEvent);
     _socket.dispose();
     _socket.disconnect();
   }
