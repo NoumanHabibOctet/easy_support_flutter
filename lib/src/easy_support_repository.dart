@@ -36,7 +36,9 @@ abstract class EasySupportRepository {
 }
 
 class EasySupportDioRepository implements EasySupportRepository {
-  EasySupportDioRepository({Dio? dio}) : _dio = dio ?? Dio();
+  EasySupportDioRepository({Dio? dio}) : _dio = dio ?? Dio() {
+    _enableRequestLogging();
+  }
 
   final Dio _dio;
 
@@ -45,14 +47,17 @@ class EasySupportDioRepository implements EasySupportRepository {
     EasySupportConfig config,
   ) async {
     final uri = Uri.parse('${config.normalizedApiBaseUrl}/channel/key');
+    final headers = _buildRequiredHeaders(config);
 
     try {
       debugPrint('EasySupport init API call: ${uri.toString()}');
+      debugPrint('EasySupport init headers: $headers');
+      _dio.options.headers.addAll(headers);
       final response = await _dio.get<dynamic>(
         uri.toString(),
-        options: Options(
+        options: _requestOptions(
+          config: config,
           method: 'GET',
-          headers: config.resolvedHeaders,
         ),
       );
 
@@ -107,14 +112,17 @@ class EasySupportDioRepository implements EasySupportRepository {
     final uri = Uri.parse(
       '${config.normalizedApiBaseUrl}/customer/${action.name}',
     );
+    final headers = _buildRequiredHeaders(config);
 
     try {
+      debugPrint('EasySupport customer headers: $headers');
+      _dio.options.headers.addAll(headers);
       final response = await _dio.post<dynamic>(
         uri.toString(),
         data: body,
-        options: Options(
+        options: _requestOptions(
+          config: config,
           method: 'POST',
-          headers: config.resolvedHeaders,
         ),
       );
 
@@ -177,13 +185,16 @@ class EasySupportDioRepository implements EasySupportRepository {
         'sort_by': sortBy,
       },
     );
+    final headers = _buildRequiredHeaders(config);
 
     try {
+      debugPrint('EasySupport chat headers: $headers');
+      _dio.options.headers.addAll(headers);
       final response = await _dio.get<dynamic>(
         uri.toString(),
-        options: Options(
+        options: _requestOptions(
+          config: config,
           method: 'GET',
-          headers: config.resolvedHeaders,
         ),
       );
 
@@ -266,6 +277,49 @@ class EasySupportDioRepository implements EasySupportRepository {
       return message?.toString();
     }
     return data.toString();
+  }
+
+  Options _requestOptions({
+    required EasySupportConfig config,
+    required String method,
+  }) {
+    return Options(
+      method: method,
+      headers: _buildRequiredHeaders(config),
+    );
+  }
+
+  void _enableRequestLogging() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          debugPrint(
+              'EasySupport Dio request: ${options.method} ${options.uri}');
+          debugPrint('EasySupport Dio headers: ${options.headers}');
+          handler.next(options);
+        },
+      ),
+    );
+  }
+
+  Map<String, String> _buildRequiredHeaders(EasySupportConfig config) {
+    final tokenFromChannelToken = config.channelToken.trim();
+    final tokenFromChannelKey = (config.channelKey ?? '').trim();
+    final token = tokenFromChannelToken.isNotEmpty
+        ? tokenFromChannelToken
+        : tokenFromChannelKey;
+    if (token.isEmpty) {
+      throw const EasySupportApiException(
+        message:
+            'channelToken/channelKey is empty; cannot send channel_key header',
+        statusCode: -1,
+      );
+    }
+
+    final headers = Map<String, String>.from(config.additionalHeaders);
+    headers['channel_key'] = token;
+    headers['channel-key'] = token;
+    return headers;
   }
 }
 
