@@ -11,6 +11,7 @@ export 'src/models/easy_support_customer_result.dart';
 export 'src/models/easy_support_customer_session.dart';
 export 'src/models/easy_support_customer_submission.dart';
 export 'src/easy_support_chat_controller.dart';
+export 'src/easy_support_chat_socket_connection.dart';
 export 'src/easy_support_controller.dart';
 export 'src/easy_support_conversation_controller.dart';
 export 'src/easy_support_customer_local_storage.dart';

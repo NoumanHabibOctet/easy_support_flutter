@@ -100,4 +100,24 @@ class EasySupportChatController extends ValueNotifier<EasySupportChatState> {
       messages: updated,
     );
   }
+
+  void addIncomingMessage(EasySupportChatMessage message) {
+    final content = (message.content ?? '').trim();
+    if (content.isEmpty && !message.isNotification) {
+      return;
+    }
+
+    final existing = value.messages;
+    final incomingId = message.id?.trim();
+    if (incomingId != null &&
+        incomingId.isNotEmpty &&
+        existing.any((item) => item.id == incomingId)) {
+      return;
+    }
+
+    value = EasySupportChatState(
+      status: EasySupportChatStatus.ready,
+      messages: <EasySupportChatMessage>[message, ...existing],
+    );
+  }
 }

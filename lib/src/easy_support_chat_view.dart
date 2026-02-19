@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'easy_support_chat_controller.dart';
 import 'easy_support_repository.dart';
+import 'easy_support_chat_socket_connection.dart';
 import 'easy_support_socket_service.dart';
 import 'models/easy_support_chat_emit_payload.dart';
 import 'models/easy_support_chat_message.dart';
@@ -38,6 +41,7 @@ class EasySupportChatView extends StatefulWidget {
 class _EasySupportChatViewState extends State<EasySupportChatView> {
   late final EasySupportChatController _controller;
   late final EasySupportSocketService _socketService;
+  EasySupportChatSocketConnection? _chatSocketConnection;
   final TextEditingController _messageController = TextEditingController();
   bool _isSending = false;
 
@@ -50,10 +54,15 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     _socketService = EasySupportSocketIoService();
     _messageController.addListener(_onMessageChanged);
     _loadMessages();
+    unawaited(_connectChatSocketIfPossible());
   }
 
   @override
   void dispose() {
+    final connection = _chatSocketConnection;
+    if (connection != null) {
+      unawaited(connection.dispose());
+    }
     _messageController.removeListener(_onMessageChanged);
     _messageController.dispose();
     _controller.dispose();
@@ -360,7 +369,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         body: body,
         chatId: chatId,
         customerId: customerId,
-        // unseenCount: 1,
+        unseenCount: 1,
       );
 
       await _socketService.sendChatMessage(
@@ -397,5 +406,36 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
       return;
     }
     setState(() {});
+  }
+
+  Future<void> _connectChatSocketIfPossible() async {
+    final chatId = widget.session.chatId;
+    final customerId = widget.session.customerId;
+    if (chatId == null ||
+        chatId.trim().isEmpty ||
+        customerId == null ||
+        customerId.trim().isEmpty) {
+      return;
+    }
+
+    try {
+      _chatSocketConnection = await _socketService.connectToChat(
+        config: widget.config,
+        customerId: customerId,
+        chatId: chatId,
+        onMessage: (message) {
+          if (!mounted) {
+            return;
+          }
+          _controller.addIncomingMessage(message);
+        },
+        onError: (error) {
+          debugPrint('EasySupport chat socket error: $error');
+        },
+      );
+      debugPrint('EasySupport chat socket connected for chat_id: $chatId');
+    } catch (error) {
+      debugPrint('EasySupport chat socket connect failed: $error');
+    }
   }
 }

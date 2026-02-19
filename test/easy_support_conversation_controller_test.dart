@@ -182,6 +182,17 @@ class _FakeSocketService implements EasySupportSocketService {
     required EasySupportConfig config,
     required EasySupportChatEmitPayload payload,
   }) async {}
+
+  @override
+  Future<EasySupportChatSocketConnection> connectToChat({
+    required EasySupportConfig config,
+    required String customerId,
+    required String chatId,
+    required void Function(EasySupportChatMessage message) onMessage,
+    void Function(Object error)? onError,
+  }) async {
+    return _NoopChatSocketConnection();
+  }
 }
 
 class _FailingSocketService implements EasySupportSocketService {
@@ -200,4 +211,20 @@ class _FailingSocketService implements EasySupportSocketService {
   }) async {
     throw StateError('chat send failed');
   }
+
+  @override
+  Future<EasySupportChatSocketConnection> connectToChat({
+    required EasySupportConfig config,
+    required String customerId,
+    required String chatId,
+    required void Function(EasySupportChatMessage message) onMessage,
+    void Function(Object error)? onError,
+  }) async {
+    return _NoopChatSocketConnection();
+  }
+}
+
+class _NoopChatSocketConnection implements EasySupportChatSocketConnection {
+  @override
+  Future<void> dispose() async {}
 }
