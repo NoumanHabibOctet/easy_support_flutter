@@ -33,9 +33,14 @@ class EasySupport {
   static Future<void> init(EasySupportConfig config) async {
     _config = config;
     _controller.reset();
-    final resolvedChannelConfiguration = await _ensureReady();
-    _config =
-        config.mergeWithChannelConfiguration(resolvedChannelConfiguration);
+    try {
+      final resolvedChannelConfiguration = await _ensureReady();
+      _config =
+          config.mergeWithChannelConfiguration(resolvedChannelConfiguration);
+    } catch (error, stackTrace) {
+      debugPrint('EasySupport init failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
   }
 
   static Future<void> open(
@@ -50,7 +55,15 @@ class EasySupport {
     );
 
     final navigator = Navigator.of(context);
-    final resolvedChannelConfiguration = await _ensureReady();
+    EasySupportChannelConfiguration? resolvedChannelConfiguration;
+    try {
+      resolvedChannelConfiguration = await _ensureReady();
+    } catch (error, stackTrace) {
+      debugPrint('EasySupport open failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return;
+    }
+
     if (!navigator.mounted) {
       return;
     }

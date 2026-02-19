@@ -88,8 +88,10 @@ class EasySupportDioRepository implements EasySupportRepository {
           error.type == DioExceptionType.receiveTimeout ||
           error.type == DioExceptionType.sendTimeout;
       throw EasySupportApiException(
-        message:
-            error.message ?? 'EasySupport init request failed for ${uri.path}',
+        message: _buildDioErrorMessage(
+          error,
+          fallback: 'EasySupport init request failed for ${uri.path}',
+        ),
         statusCode: error.response?.statusCode ?? -1,
         isNetworkError: isNetworkError,
       );
@@ -148,8 +150,10 @@ class EasySupportDioRepository implements EasySupportRepository {
           error.type == DioExceptionType.receiveTimeout ||
           error.type == DioExceptionType.sendTimeout;
       throw EasySupportApiException(
-        message: error.message ??
-            'EasySupport customer request failed for ${uri.path}',
+        message: _buildDioErrorMessage(
+          error,
+          fallback: 'EasySupport customer request failed for ${uri.path}',
+        ),
         statusCode: error.response?.statusCode ?? -1,
         isNetworkError: isNetworkError,
       );
@@ -218,12 +222,50 @@ class EasySupportDioRepository implements EasySupportRepository {
           error.type == DioExceptionType.receiveTimeout ||
           error.type == DioExceptionType.sendTimeout;
       throw EasySupportApiException(
-        message:
-            error.message ?? 'EasySupport chat request failed for ${uri.path}',
+        message: _buildDioErrorMessage(
+          error,
+          fallback: 'EasySupport chat request failed for ${uri.path}',
+        ),
         statusCode: error.response?.statusCode ?? -1,
         isNetworkError: isNetworkError,
       );
     }
+  }
+
+  String _buildDioErrorMessage(
+    DioException error, {
+    required String fallback,
+  }) {
+    final statusCode = error.response?.statusCode;
+    final responseData = error.response?.data;
+    final responseMessage = _extractResponseMessage(responseData);
+    final dioMessage = error.message;
+
+    final parts = <String>[
+      fallback,
+      if (statusCode != null) 'status=$statusCode',
+      if (responseMessage != null && responseMessage.isNotEmpty)
+        'response=$responseMessage',
+      if (dioMessage != null && dioMessage.isNotEmpty) 'dio=$dioMessage',
+    ];
+
+    return parts.join(' | ');
+  }
+
+  String? _extractResponseMessage(dynamic data) {
+    if (data == null) {
+      return null;
+    }
+    if (data is String) {
+      return data;
+    }
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final message =
+          map['message'] ?? map['error'] ?? map['details'] ?? map['data'];
+      return message?.toString();
+    }
+    return data.toString();
   }
 }
 
