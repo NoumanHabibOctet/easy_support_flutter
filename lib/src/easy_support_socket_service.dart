@@ -70,7 +70,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
           // 'id': customerId,
           'customer_id': customerId,
           if (channelId != null && channelId.trim().isNotEmpty)
-            'channel_id': channelId.trim(),
+            'channel_tokken': channelId.trim(),
         },
         ack: completeWithPayload,
       );
