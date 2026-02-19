@@ -392,7 +392,7 @@ class EasySupportDioRepository implements EasySupportRepository {
     if (token.isEmpty) {
       throw const EasySupportApiException(
         message:
-            'channelToken/channelKey is empty; cannot send channel_key header',
+            'channelToken/channelKey is empty; cannot send channelkey header',
         statusCode: -1,
       );
     }
@@ -402,8 +402,7 @@ class EasySupportDioRepository implements EasySupportRepository {
     headers.remove('channelKey');
     headers.remove('channel_key');
     headers.remove('channel-key');
-    headers['channel_key'] = token;
-    headers['channel-key'] = token;
+    headers['channelkey'] = token;
     return headers;
   }
 }

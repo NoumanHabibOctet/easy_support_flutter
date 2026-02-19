@@ -30,8 +30,8 @@ class EasySupportConfig {
       channelToken: channelToken,
       apiBaseUrl:
           json['api_base_url'] as String? ?? json['apiBaseUrl'] as String?,
-      channelKey: json['channel_key'] as String? ??
-          json['channelkey'] as String? ??
+      channelKey: json['channelkey'] as String? ??
+          json['channel_key'] as String? ??
           json['channelKey'] as String?,
       widgetTitle:
           json['widget_title'] as String? ?? json['widgetTitle'] as String?,
@@ -61,7 +61,7 @@ class EasySupportConfig {
       'base_url': baseUrl,
       'channel_token': channelToken,
       if (apiBaseUrl != null) 'api_base_url': apiBaseUrl,
-      if (channelKey != null) 'channel_key': channelKey,
+      if (channelKey != null) 'channelkey': channelKey,
       if (widgetTitle != null) 'widget_title': widgetTitle,
       'auto_open': autoOpen,
       'is_emoji_enabled': isEmojiEnabled,
@@ -82,8 +82,7 @@ class EasySupportConfig {
 
   Map<String, String> get resolvedHeaders {
     final headers = _sanitizeHeaders(additionalHeaders);
-    headers['channel_key'] = channelToken;
-    headers['channel-key'] = channelToken;
+    headers['channelkey'] = channelToken;
     return headers;
   }
 

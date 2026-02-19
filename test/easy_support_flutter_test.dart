@@ -29,12 +29,11 @@ void main() {
     expect(options['isEmojiEnabled'], false);
     expect(options['isMediaEnabled'], true);
     expect(options['additionalHeaders'], <String, String>{
-      'channel_key': 'api_test_123',
-      'channel-key': 'api_test_123',
+      'channelkey': 'api_test_123',
     });
   });
 
-  test('always injects channel_key header from channelToken', () {
+  test('always injects channelkey header from channelToken', () {
     const config = EasySupportConfig(
       baseUrl: 'https://api.example.com',
       channelToken: 'api_test_123',
@@ -46,8 +45,7 @@ void main() {
 
     expect(config.resolvedHeaders, <String, String>{
       'authorization': 'Bearer token',
-      'channel_key': 'api_test_123',
-      'channel-key': 'api_test_123',
+      'channelkey': 'api_test_123',
     });
   });
 
