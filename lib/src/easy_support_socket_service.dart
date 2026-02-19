@@ -54,6 +54,9 @@ class EasySupportSocketIoService implements EasySupportSocketService {
 
     void onAnyEvent(String event, dynamic payload) {
       _log('socket event[$event]: $payload');
+      if (event == 'chat_id' || event == 'chatId') {
+        completeWithPayload(payload);
+      }
     }
 
     void onAnyOutgoing(String event, dynamic payload) {
@@ -100,6 +103,8 @@ class EasySupportSocketIoService implements EasySupportSocketService {
     socket.on('join_chat_response', onJoinEvent);
     socket.on('join_chat_success', onJoinEvent);
     socket.on('chat_joined', onJoinEvent);
+    socket.on('chat_id', onJoinEvent);
+    socket.on('chatId', onJoinEvent);
     socket.onConnectError((dynamic error) {
       failWith(StateError('Socket connect error: $error'));
     });
@@ -128,6 +133,8 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       socket.off('join_chat_response', onJoinEvent);
       socket.off('join_chat_success', onJoinEvent);
       socket.off('chat_joined', onJoinEvent);
+      socket.off('chat_id', onJoinEvent);
+      socket.off('chatId', onJoinEvent);
       _log('socket closing for join_chat');
       socket.dispose();
       socket.disconnect();
