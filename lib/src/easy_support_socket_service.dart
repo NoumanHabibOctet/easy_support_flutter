@@ -68,7 +68,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
         <String, dynamic>{
           // 'id': customerId,
           'customer_id': customerId,
-          if (channelToken.isNotEmpty) 'channel_tokken': channelToken,
+          if (channelToken.isNotEmpty) 'channel_token': channelToken,
         },
         ack: completeWithPayload,
       );
