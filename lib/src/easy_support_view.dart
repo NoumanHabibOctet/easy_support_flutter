@@ -17,6 +17,7 @@ import 'widgets/easy_support_header.dart';
 import 'widgets/easy_support_hero_section.dart';
 import 'widgets/easy_support_input_field.dart';
 import 'widgets/easy_support_message_card.dart';
+import 'widgets/easy_support_stack_loader.dart';
 
 typedef EasySupportErrorCallback = void Function(WebResourceError error);
 
@@ -102,10 +103,6 @@ class _EasySupportViewState extends State<EasySupportView> {
         !_isSessionLoading &&
         (!showForm || _areRequiredFieldsFilled(form: form));
 
-    if (_isSessionLoading) {
-      return _buildLoadingState();
-    }
-
     final shouldShowChatScreen = _session.hasCustomerId && _session.hasChatId;
     _printScreenState(shouldShowChatScreen: shouldShowChatScreen);
     if (shouldShowChatScreen) {
@@ -189,13 +186,27 @@ class _EasySupportViewState extends State<EasySupportView> {
       ),
     );
 
+    final showOverlayLoader = _isSessionLoading || _isSubmitting;
+    final stackLoaderMessage =
+        _isSessionLoading ? 'Preparing support...' : 'Starting conversation...';
+    final stackedContent = Stack(
+      children: [
+        Positioned.fill(child: content),
+        EasySupportStackLoader(
+          visible: showOverlayLoader,
+          message: stackLoaderMessage,
+          primaryColor: primaryColor,
+        ),
+      ],
+    );
+
     if (widget.isFullScreen) {
-      return content;
+      return stackedContent;
     }
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-      child: content,
+      child: stackedContent,
     );
   }
 
@@ -269,33 +280,6 @@ class _EasySupportViewState extends State<EasySupportView> {
         title: form.formMessage,
         children: fields,
       ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    const content = DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFF7F8FC),
-            Color(0xFFF2F4F8),
-          ],
-        ),
-      ),
-      child: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    if (widget.isFullScreen) {
-      return content;
-    }
-
-    return const ClipRRect(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      child: content,
     );
   }
 
