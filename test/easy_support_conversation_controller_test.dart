@@ -119,6 +119,14 @@ class _FakeConversationRepository implements EasySupportRepository {
   }
 
   @override
+  Future<EasySupportCustomerResponse> fetchCustomerById({
+    required EasySupportConfig config,
+    required String customerId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<EasySupportChatMessagesResponse> fetchCustomerChatMessages({
     required EasySupportConfig config,
     required String chatId,

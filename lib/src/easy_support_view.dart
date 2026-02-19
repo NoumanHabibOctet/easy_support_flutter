@@ -7,6 +7,7 @@ import 'easy_support_customer_local_storage.dart';
 import 'easy_support_repository.dart';
 import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_config.dart';
+import 'models/easy_support_customer_result.dart';
 import 'models/easy_support_customer_session.dart';
 import 'models/easy_support_customer_submission.dart';
 import 'widgets/easy_support_action_bar.dart';
@@ -402,9 +403,27 @@ class _EasySupportViewState extends State<EasySupportView> {
   Future<void> _loadCustomerSession() async {
     try {
       final session = await _conversationController.loadSession();
+      EasySupportCustomerResult? customer;
+      if (session.hasCustomerId) {
+        try {
+          final customerResponse =
+              await _conversationController.fetchCustomerById(
+            config: widget.config,
+            customerId: session.customerId!,
+          );
+          customer = customerResponse.result;
+          debugPrint(
+            'EasySupport fetched customer by id: ${customerResponse.customerId}',
+          );
+        } catch (error) {
+          debugPrint('EasySupport customer get failed: $error');
+        }
+      }
+
       if (!mounted) {
         return;
       }
+      _prefillFieldsFromCustomer(customer: customer);
       setState(() {
         _session = session;
         _isSessionLoading = false;
@@ -423,6 +442,31 @@ class _EasySupportViewState extends State<EasySupportView> {
           content: Text('Session load failed: $error'),
         ),
       );
+    }
+  }
+
+  void _prefillFieldsFromCustomer({
+    required EasySupportCustomerResult? customer,
+  }) {
+    final form = widget.channelConfiguration?.chatForm;
+    final formEnabled =
+        widget.channelConfiguration?.hasActiveForm == true && form != null;
+    if (!formEnabled || customer == null) {
+      return;
+    }
+
+    final email = customer.email?.trim();
+    final name = customer.name?.trim();
+    final phone = customer.phone?.trim();
+
+    if (form.isEmailEnabled == true && email != null && email.isNotEmpty) {
+      _emailController.text = email;
+    }
+    if (form.isNameEnabled == true && name != null && name.isNotEmpty) {
+      _nameController.text = name;
+    }
+    if (form.isPhoneEnabled == true && phone != null && phone.isNotEmpty) {
+      _phoneController.text = phone;
     }
   }
 

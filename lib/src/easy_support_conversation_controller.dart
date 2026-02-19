@@ -3,6 +3,7 @@ import 'easy_support_repository.dart';
 import 'easy_support_socket_service.dart';
 import 'models/easy_support_config.dart';
 import 'models/easy_support_customer_action.dart';
+import 'models/easy_support_customer_response.dart';
 import 'models/easy_support_customer_session.dart';
 import 'models/easy_support_customer_submission.dart';
 
@@ -21,6 +22,16 @@ class EasySupportConversationController {
 
   Future<EasySupportCustomerSession> loadSession() {
     return _localStorage.readSession();
+  }
+
+  Future<EasySupportCustomerResponse> fetchCustomerById({
+    required EasySupportConfig config,
+    required String customerId,
+  }) {
+    return _repository.fetchCustomerById(
+      config: config,
+      customerId: customerId,
+    );
   }
 
   Future<EasySupportCustomerSession> startConversation({

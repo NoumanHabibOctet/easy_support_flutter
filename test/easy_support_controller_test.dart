@@ -59,6 +59,14 @@ class _FakeSuccessRepository implements EasySupportRepository {
   }
 
   @override
+  Future<EasySupportCustomerResponse> fetchCustomerById({
+    required EasySupportConfig config,
+    required String customerId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<EasySupportCustomerResponse> postCustomer({
     required EasySupportConfig config,
     required EasySupportCustomerAction action,
@@ -88,6 +96,14 @@ class _FakeFailureRepository implements EasySupportRepository {
       message: 'GET failed',
       statusCode: 500,
     );
+  }
+
+  @override
+  Future<EasySupportCustomerResponse> fetchCustomerById({
+    required EasySupportConfig config,
+    required String customerId,
+  }) {
+    throw UnimplementedError();
   }
 
   @override
@@ -131,6 +147,14 @@ class _FakeNetworkThenSuccessRepository implements EasySupportRepository {
       name: "Noman's Channel",
       token: 'api_test_123',
     );
+  }
+
+  @override
+  Future<EasySupportCustomerResponse> fetchCustomerById({
+    required EasySupportConfig config,
+    required String customerId,
+  }) {
+    throw UnimplementedError();
   }
 
   @override

@@ -12,6 +12,15 @@ abstract class EasySupportRepository {
     EasySupportConfig config,
   );
 
+  Future<EasySupportCustomerResponse> fetchCustomerById({
+    required EasySupportConfig config,
+    required String customerId,
+  }) {
+    throw UnimplementedError(
+      'fetchCustomerById is not implemented in this repository.',
+    );
+  }
+
   Future<EasySupportCustomerResponse> postCustomer({
     required EasySupportConfig config,
     required EasySupportCustomerAction action,
@@ -161,6 +170,78 @@ class EasySupportDioRepository implements EasySupportRepository {
         message: _buildDioErrorMessage(
           error,
           fallback: 'EasySupport customer request failed for ${uri.path}',
+        ),
+        statusCode: error.response?.statusCode ?? -1,
+        isNetworkError: isNetworkError,
+      );
+    }
+  }
+
+  @override
+  Future<EasySupportCustomerResponse> fetchCustomerById({
+    required EasySupportConfig config,
+    required String customerId,
+  }) async {
+    final normalizedCustomerId = customerId.trim();
+    if (normalizedCustomerId.isEmpty) {
+      throw const EasySupportApiException(
+        message: 'customerId is empty; cannot fetch customer details',
+        statusCode: -1,
+      );
+    }
+
+    final uri = Uri.parse(
+      '${config.normalizedApiBaseUrl}/customer/$normalizedCustomerId',
+    );
+    final headers = _buildRequiredHeaders(config);
+
+    try {
+      debugPrint('EasySupport customer get headers: $headers');
+      _dio.options.headers.addAll(headers);
+      final response = await _dio.get<dynamic>(
+        uri.toString(),
+        options: _requestOptions(
+          config: config,
+          method: 'GET',
+        ),
+      );
+
+      final statusCode = response.statusCode ?? -1;
+      if (statusCode < 200 || statusCode >= 300) {
+        throw EasySupportApiException(
+          message: 'EasySupport customer get failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+
+      final rawBody = response.data;
+      if (rawBody is! Map) {
+        throw EasySupportApiException(
+          message: 'EasySupport customer get failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+
+      final parsedResponse = EasySupportCustomerResponse.fromJson(
+        Map<String, dynamic>.from(rawBody),
+      );
+      if (!parsedResponse.success) {
+        throw EasySupportApiException(
+          message: 'EasySupport customer get failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+
+      return parsedResponse;
+    } on DioException catch (error) {
+      final isNetworkError = error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout;
+      throw EasySupportApiException(
+        message: _buildDioErrorMessage(
+          error,
+          fallback: 'EasySupport customer get request failed for ${uri.path}',
         ),
         statusCode: error.response?.statusCode ?? -1,
         isNetworkError: isNetworkError,
