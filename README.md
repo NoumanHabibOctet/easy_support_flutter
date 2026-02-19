@@ -50,7 +50,7 @@ EasySupportView(
 - `apiBaseUrl` defaults to `${baseUrl}/api/v1` if not provided.
 - During `EasySupport.init`, the SDK calls `${apiBaseUrl}/channel/key` first.
 - If network is unavailable, init automatically retries and completes when connection is back.
-- All widget API calls include `channel_key: channelToken` in headers.
+- All widget API calls include `channelkey: channelToken` in headers.
 - Init state is available via `EasySupport.state` / `EasySupport.stateListenable`.
 - Merged runtime config (input params + API response) is available via `EasySupport.resolvedConfig`.
 - Network workflow is handled by repository (`EasySupportRepository` -> `EasySupportDioRepository`) using `GET /channel/key`.

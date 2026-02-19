@@ -59,6 +59,7 @@ void main() {
     );
 
     expect(repository.capturedAction, EasySupportCustomerAction.update);
+    expect(repository.capturedBody['id'], 'customer_1');
     expect(repository.capturedBody['customer_id'], 'customer_1');
     expect(repository.capturedBody['name'], 'John Doe');
     expect(repository.capturedBody['email'], 'john@example.com');

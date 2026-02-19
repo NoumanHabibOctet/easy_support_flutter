@@ -40,7 +40,9 @@ class EasySupportCustomerSubmission {
     final body = <String, dynamic>{};
 
     if (action == EasySupportCustomerAction.update && hasCustomerId) {
-      body['customer_id'] = customerId!.trim();
+      final normalizedId = customerId!.trim();
+      body['id'] = normalizedId;
+      body['customer_id'] = normalizedId;
     }
 
     final normalizedName = _normalize(name);
