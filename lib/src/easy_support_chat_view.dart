@@ -47,7 +47,27 @@ class EasySupportChatView extends StatefulWidget {
 }
 
 class _EasySupportChatViewState extends State<EasySupportChatView> {
+  static const List<String> _emojiOptions = <String>[
+    '😀',
+    '😁',
+    '😂',
+    '😊',
+    '😍',
+    '😎',
+    '🤝',
+    '🙏',
+    '👍',
+    '👏',
+    '🎉',
+    '❤️',
+    '🔥',
+    '💯',
+    '✅',
+    '🚀',
+  ];
+
   late final EasySupportChatController _controller;
+  late final EasySupportRepository _repository;
   late final EasySupportSocketService _socketService;
   EasySupportChatSocketConnection? _chatSocketConnection;
   Future<void>? _socketConnectTask;
@@ -55,12 +75,17 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   final TextEditingController _messageController = TextEditingController();
   bool _isSending = false;
   bool _isLeaving = false;
+  bool _isChatClosedByAgent = false;
+  bool _isAutoFeedbackFlowRunning = false;
+  bool _hasHandledAgentClosedNotification = false;
+  String? _lastHandledClosedNotificationId;
 
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository ?? EasySupportDioRepository();
     _controller = EasySupportChatController(
-      repository: widget.repository ?? EasySupportDioRepository(),
+      repository: _repository,
     );
     _socketService = EasySupportSocketServiceResolver();
     _controller.addListener(_onChatStateChanged);
@@ -86,12 +111,15 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   @override
   Widget build(BuildContext context) {
     final headerStart =
-        EasySupportColorUtils.blend(widget.primaryColor, Colors.black, 0.12);
+        EasySupportColorUtils.blend(widget.primaryColor, Colors.black, 0.08);
+    final headerMid =
+        EasySupportColorUtils.blend(widget.primaryColor, Colors.white, 0.06);
     final headerEnd =
-        EasySupportColorUtils.blend(widget.primaryColor, Colors.white, 0.08);
+        EasySupportColorUtils.blend(widget.primaryColor, Colors.black, 0.14);
     const surfaceColor = Color(0xFFF6F7FA);
     final inputBorderColor =
         EasySupportColorUtils.blend(widget.primaryColor, Colors.black, 0.04);
+    final isComposerLocked = _isChatClosedByAgent || _isLeaving;
     final systemUiStyle = SystemUiOverlayStyle(
       statusBarColor: widget.primaryColor,
       statusBarIconBrightness: widget.onPrimaryColor == Colors.white
@@ -115,7 +143,8 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: <Color>[headerStart, headerEnd],
+                  colors: <Color>[headerStart, headerMid, headerEnd],
+                  stops: const <double>[0.0, 0.55, 1.0],
                 ),
                 borderRadius:
                     const BorderRadius.vertical(bottom: Radius.circular(20)),
@@ -216,58 +245,91 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
               child: Column(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: inputBorderColor, width: 2),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _messageController,
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => _sendMessage(),
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              hintText: 'Type your message',
-                              hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
-                            ),
-                          ),
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 180),
+                    opacity: isComposerLocked ? 0.55 : 1,
+                    child: IgnorePointer(
+                      ignoring: isComposerLocked,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(color: inputBorderColor, width: 2),
                         ),
-                        Icon(Icons.attach_file_rounded,
-                            color: Colors.grey.shade600),
-                        const SizedBox(width: 8),
-                        Icon(Icons.sentiment_satisfied,
-                            color: Colors.grey.shade600),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: _isSending ||
-                                  _messageController.text.trim().isEmpty
-                              ? null
-                              : _sendMessage,
-                          icon: _isSending
-                              ? SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.grey.shade600,
-                                    ),
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.send_rounded,
-                                  color: _messageController.text.trim().isEmpty
-                                      ? Colors.grey.shade400
-                                      : Colors.grey.shade700,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _messageController,
+                                enabled: !isComposerLocked,
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => _sendMessage(),
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: 'Type your message',
+                                  hintStyle:
+                                      TextStyle(color: Color(0xFF9CA3AF)),
                                 ),
+                              ),
+                            ),
+                            Icon(Icons.attach_file_rounded,
+                                color: isComposerLocked
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed:
+                                  isComposerLocked ? null : _openEmojiPicker,
+                              icon: Icon(
+                                Icons.sentiment_satisfied,
+                                color: isComposerLocked
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: isComposerLocked ||
+                                      _isSending ||
+                                      _messageController.text.trim().isEmpty
+                                  ? null
+                                  : _sendMessage,
+                              icon: _isSending
+                                  ? SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.send_rounded,
+                                      color:
+                                          _messageController.text.trim().isEmpty
+                                              ? Colors.grey.shade400
+                                              : Colors.grey.shade700,
+                                    ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
+                  if (_isChatClosedByAgent) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Chat is closed by agent. Please submit feedback.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   const Text(
                     'Powered by Easy Support',
@@ -390,7 +452,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
 
   Future<void> _sendMessage() async {
     final body = _messageController.text.trim();
-    if (body.isEmpty || _isSending) {
+    if (body.isEmpty || _isSending || _isChatClosedByAgent) {
       return;
     }
 
@@ -471,6 +533,10 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         debugPrint(
           'EasySupport feedback submission: ${feedbackSubmission.toJson()}',
         );
+        await _submitFeedback(
+          feedbackSubmission: feedbackSubmission,
+          chatId: chatId,
+        );
       }
 
       await _connectChatSocketIfPossible();
@@ -515,7 +581,10 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   bool get _isFeedbackEnabled =>
       widget.channelConfiguration?.isFeedbackEnabled == true;
 
-  Future<EasySupportFeedbackSubmission?> _collectFeedbackIfEnabled() async {
+  Future<EasySupportFeedbackSubmission?> _collectFeedbackIfEnabled({
+    bool isDismissible = true,
+    bool enableDrag = true,
+  }) async {
     if (!_isFeedbackEnabled) {
       return null;
     }
@@ -527,8 +596,8 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
 
     return showModalBottomSheet<EasySupportFeedbackSubmission>(
       context: context,
-      isDismissible: true,
-      enableDrag: true,
+      isDismissible: isDismissible,
+      enableDrag: enableDrag,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
@@ -550,6 +619,68 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
 
   void _onChatStateChanged() {
     _scrollToBottom();
+    _checkAgentClosedNotificationAndHandle();
+  }
+
+  Future<void> _openEmojiPicker() async {
+    final emoji = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 18),
+            child: GridView.builder(
+              shrinkWrap: true,
+              itemCount: _emojiOptions.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 8,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemBuilder: (context, index) {
+                final value = _emojiOptions[index];
+                return InkWell(
+                  onTap: () => Navigator.of(context).pop(value),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Center(
+                    child: Text(
+                      value,
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || emoji == null || emoji.isEmpty) {
+      return;
+    }
+    _insertEmoji(emoji);
+  }
+
+  void _insertEmoji(String emoji) {
+    final value = _messageController.value;
+    final selection = value.selection;
+    final text = value.text;
+
+    final safeStart = selection.start >= 0 ? selection.start : text.length;
+    final safeEnd = selection.end >= 0 ? selection.end : text.length;
+
+    final newText = text.replaceRange(safeStart, safeEnd, emoji);
+    final newOffset = safeStart + emoji.length;
+    _messageController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newOffset),
+    );
   }
 
   Future<void> _connectChatSocketIfPossible() async {
@@ -595,6 +726,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
             return;
           }
           _controller.addIncomingMessage(message);
+          _handleIncomingMessage(message);
         },
         onError: (error) {
           debugPrint('EasySupport chat socket error: $error');
@@ -604,6 +736,137 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     } catch (error) {
       debugPrint('EasySupport chat socket connect failed: $error');
     }
+  }
+
+  void _handleIncomingMessage(EasySupportChatMessage message) {
+    if (_isAgentClosedNotification(message)) {
+      _triggerAgentClosedFlow(message);
+    }
+  }
+
+  void _checkAgentClosedNotificationAndHandle() {
+    final state = _controller.value;
+    if (state.messages.isEmpty) {
+      return;
+    }
+    for (final message in state.messages.reversed) {
+      if (_isAgentClosedNotification(message)) {
+        _triggerAgentClosedFlow(message);
+        return;
+      }
+    }
+  }
+
+  bool _isAgentClosedNotification(EasySupportChatMessage message) {
+    if (!message.isNotification) {
+      return false;
+    }
+    final content = (message.content ?? '').trim().toLowerCase();
+    return content.contains('agent closed the chat');
+  }
+
+  void _triggerAgentClosedFlow(EasySupportChatMessage message) {
+    if (_hasHandledAgentClosedNotification) {
+      return;
+    }
+    final id = message.id?.trim();
+    if (id != null && id.isNotEmpty && _lastHandledClosedNotificationId == id) {
+      return;
+    }
+    _hasHandledAgentClosedNotification = true;
+    _lastHandledClosedNotificationId = id ?? _lastHandledClosedNotificationId;
+
+    if (_isChatClosedByAgent) {
+      return;
+    }
+    setState(() {
+      _isChatClosedByAgent = true;
+    });
+
+    if (!_isFeedbackEnabled || _isAutoFeedbackFlowRunning) {
+      return;
+    }
+    _isAutoFeedbackFlowRunning = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        if (!mounted) {
+          return;
+        }
+        final chatId = widget.session.chatId;
+        if (chatId == null || chatId.trim().isEmpty) {
+          return;
+        }
+        final feedbackSubmission = await _collectFeedbackIfEnabled(
+          isDismissible: false,
+          enableDrag: false,
+        );
+        if (!mounted || feedbackSubmission == null) {
+          return;
+        }
+        await _submitFeedback(
+          feedbackSubmission: feedbackSubmission,
+          chatId: chatId,
+        );
+        await _leaveChatAndClearLocal(chatId: chatId);
+      } catch (error) {
+        if (!mounted) {
+          return;
+        }
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text('Feedback submit failed: $error')),
+        );
+      } finally {
+        _isAutoFeedbackFlowRunning = false;
+      }
+    });
+  }
+
+  Future<void> _submitFeedback({
+    required EasySupportFeedbackSubmission feedbackSubmission,
+    required String chatId,
+  }) async {
+    final customerId = widget.session.customerId;
+    if (customerId == null || customerId.trim().isEmpty) {
+      throw StateError('customer_id is missing for feedback submission');
+    }
+
+    final payload = <String, dynamic>{
+      'chat_id': chatId.trim(),
+      'customer_id': customerId.trim(),
+      'content': feedbackSubmission.comment.trim(),
+      'rating': feedbackSubmission.rating,
+    };
+
+    await _repository.submitFeedback(
+      config: widget.config,
+      body: payload,
+    );
+    debugPrint('EasySupport feedback submitted: $payload');
+  }
+
+  Future<void> _leaveChatAndClearLocal({
+    required String chatId,
+  }) async {
+    await _connectChatSocketIfPossible();
+    final activeConnection = _chatSocketConnection;
+    if (activeConnection != null) {
+      await activeConnection.leaveChat(chatId);
+    }
+
+    await EasySupportSharedPrefsCustomerLocalStorage().writeSession(
+      EasySupportCustomerSession(
+        customerId: widget.session.customerId,
+        channelId: widget.session.channelId,
+      ),
+    );
+
+    await activeConnection?.dispose();
+    _chatSocketConnection = null;
+
+    if (!mounted) {
+      return;
+    }
+    widget.onClose();
   }
 
   void _scrollToBottom() {

@@ -42,6 +42,15 @@ abstract class EasySupportRepository {
       'fetchCustomerChatMessages is not implemented in this repository.',
     );
   }
+
+  Future<void> submitFeedback({
+    required EasySupportConfig config,
+    required Map<String, dynamic> body,
+  }) {
+    throw UnimplementedError(
+      'submitFeedback is not implemented in this repository.',
+    );
+  }
 }
 
 class EasySupportDioRepository implements EasySupportRepository {
@@ -317,6 +326,60 @@ class EasySupportDioRepository implements EasySupportRepository {
         message: _buildDioErrorMessage(
           error,
           fallback: 'EasySupport chat request failed for ${uri.path}',
+        ),
+        statusCode: error.response?.statusCode ?? -1,
+        isNetworkError: isNetworkError,
+      );
+    }
+  }
+
+  @override
+  Future<void> submitFeedback({
+    required EasySupportConfig config,
+    required Map<String, dynamic> body,
+  }) async {
+    final uri = Uri.parse('${config.normalizedApiBaseUrl}/feedback');
+    final headers = _buildRequiredHeaders(config);
+
+    try {
+      debugPrint('EasySupport feedback headers: $headers');
+      _dio.options.headers.addAll(headers);
+      final response = await _dio.post<dynamic>(
+        uri.toString(),
+        data: body,
+        options: _requestOptions(
+          config: config,
+          method: 'POST',
+        ),
+      );
+
+      final statusCode = response.statusCode ?? -1;
+      if (statusCode < 200 || statusCode >= 300) {
+        throw EasySupportApiException(
+          message: 'EasySupport feedback failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+
+      final rawBody = response.data;
+      if (rawBody is Map) {
+        final parsed = Map<String, dynamic>.from(rawBody);
+        if (parsed['success'] == false) {
+          throw EasySupportApiException(
+            message: 'EasySupport feedback failed for ${uri.path}',
+            statusCode: statusCode,
+          );
+        }
+      }
+    } on DioException catch (error) {
+      final isNetworkError = error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout;
+      throw EasySupportApiException(
+        message: _buildDioErrorMessage(
+          error,
+          fallback: 'EasySupport feedback request failed for ${uri.path}',
         ),
         statusCode: error.response?.statusCode ?? -1,
         isNetworkError: isNetworkError,
