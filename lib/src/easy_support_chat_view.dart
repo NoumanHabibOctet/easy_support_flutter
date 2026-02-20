@@ -392,12 +392,6 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         throw StateError('Chat socket is not connected');
       }
       await activeConnection.sendChatMessage(payload);
-
-      _controller.addLocalCustomerMessage(
-        customerId: customerId,
-        chatId: chatId,
-        body: body,
-      );
       _messageController.clear();
     } catch (error) {
       if (!mounted) {
