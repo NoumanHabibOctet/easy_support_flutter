@@ -577,16 +577,28 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   }
 
   void _scrollToBottom() {
-    if (!mounted || !_scrollController.hasClients) {
+    if (!mounted) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) {
         return;
       }
+      final target = _scrollController.position.maxScrollExtent;
+      final current = _scrollController.offset;
+      final distance = (target - current).abs();
+      if (distance <= 2) {
+        return;
+      }
+
+      if (distance > 300) {
+        _scrollController.jumpTo(target);
+        return;
+      }
+
       _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 200),
+        target,
+        duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
       );
     });
