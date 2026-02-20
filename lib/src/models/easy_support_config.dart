@@ -14,6 +14,11 @@ class EasySupportConfig {
     this.useWebSocketChannel = false,
     this.webSocketChannelUrl,
     this.webSocketChannelSocketIoMode = false,
+    this.socketPath,
+    this.socketNamespace,
+    this.socketTransports = const <String>['websocket', 'polling'],
+    this.socketQuery = const <String, dynamic>{},
+    this.socketAuth = const <String, dynamic>{},
     this.additionalHeaders = const <String, String>{},
   }) : assert(channelToken != '', 'channelToken cannot be empty.');
 
@@ -57,6 +62,17 @@ class EasySupportConfig {
           json['web_socket_channel_socket_io_mode'] as bool? ??
               json['webSocketChannelSocketIoMode'] as bool? ??
               false,
+      socketPath:
+          json['socket_path'] as String? ?? json['socketPath'] as String?,
+      socketNamespace: json['socket_namespace'] as String? ??
+          json['socketNamespace'] as String?,
+      socketTransports: _parseStringList(
+        json['socket_transports'] ?? json['socketTransports'],
+        fallback: const <String>['websocket', 'polling'],
+      ),
+      socketQuery:
+          _parseDynamicMap(json['socket_query'] ?? json['socketQuery']),
+      socketAuth: _parseDynamicMap(json['socket_auth'] ?? json['socketAuth']),
       additionalHeaders: headers,
     );
   }
@@ -73,6 +89,11 @@ class EasySupportConfig {
   final bool useWebSocketChannel;
   final String? webSocketChannelUrl;
   final bool webSocketChannelSocketIoMode;
+  final String? socketPath;
+  final String? socketNamespace;
+  final List<String> socketTransports;
+  final Map<String, dynamic> socketQuery;
+  final Map<String, dynamic> socketAuth;
   final Map<String, String> additionalHeaders;
 
   Map<String, dynamic> toJson() {
@@ -90,6 +111,11 @@ class EasySupportConfig {
       if (webSocketChannelUrl != null)
         'web_socket_channel_url': webSocketChannelUrl,
       'web_socket_channel_socket_io_mode': webSocketChannelSocketIoMode,
+      if (socketPath != null) 'socket_path': socketPath,
+      if (socketNamespace != null) 'socket_namespace': socketNamespace,
+      if (socketTransports.isNotEmpty) 'socket_transports': socketTransports,
+      if (socketQuery.isNotEmpty) 'socket_query': socketQuery,
+      if (socketAuth.isNotEmpty) 'socket_auth': socketAuth,
       if (additionalHeaders.isNotEmpty) 'additional_headers': additionalHeaders,
     };
   }
@@ -131,6 +157,13 @@ class EasySupportConfig {
       if (webSocketChannelUrl != null && webSocketChannelUrl!.trim().isNotEmpty)
         'webSocketChannelUrl': webSocketChannelUrl!.trim(),
       'webSocketChannelSocketIoMode': webSocketChannelSocketIoMode,
+      if (socketPath != null && socketPath!.trim().isNotEmpty)
+        'socketPath': socketPath!.trim(),
+      if (socketNamespace != null && socketNamespace!.trim().isNotEmpty)
+        'socketNamespace': socketNamespace!.trim(),
+      if (socketTransports.isNotEmpty) 'socketTransports': socketTransports,
+      if (socketQuery.isNotEmpty) 'socketQuery': socketQuery,
+      if (socketAuth.isNotEmpty) 'socketAuth': socketAuth,
       if (channelKey != null && channelKey!.trim().isNotEmpty)
         'channelKey': channelKey!.trim(),
       if (widgetTitle != null && widgetTitle!.trim().isNotEmpty)
@@ -156,6 +189,11 @@ class EasySupportConfig {
     bool? useWebSocketChannel,
     String? webSocketChannelUrl,
     bool? webSocketChannelSocketIoMode,
+    String? socketPath,
+    String? socketNamespace,
+    List<String>? socketTransports,
+    Map<String, dynamic>? socketQuery,
+    Map<String, dynamic>? socketAuth,
     Map<String, String>? additionalHeaders,
   }) {
     return EasySupportConfig(
@@ -172,6 +210,11 @@ class EasySupportConfig {
       webSocketChannelUrl: webSocketChannelUrl ?? this.webSocketChannelUrl,
       webSocketChannelSocketIoMode:
           webSocketChannelSocketIoMode ?? this.webSocketChannelSocketIoMode,
+      socketPath: socketPath ?? this.socketPath,
+      socketNamespace: socketNamespace ?? this.socketNamespace,
+      socketTransports: socketTransports ?? this.socketTransports,
+      socketQuery: socketQuery ?? this.socketQuery,
+      socketAuth: socketAuth ?? this.socketAuth,
       additionalHeaders: additionalHeaders ?? this.additionalHeaders,
     );
   }
@@ -194,5 +237,31 @@ class EasySupportConfig {
       return headers;
     }
     return const <String, String>{};
+  }
+
+  static Map<String, dynamic> _parseDynamicMap(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+    return const <String, dynamic>{};
+  }
+
+  static List<String> _parseStringList(
+    dynamic value, {
+    required List<String> fallback,
+  }) {
+    if (value is List) {
+      final parsed = value
+          .map((dynamic item) => '$item'.trim())
+          .where((String item) => item.isNotEmpty)
+          .toList(growable: false);
+      if (parsed.isNotEmpty) {
+        return parsed;
+      }
+    }
+    return fallback;
   }
 }
