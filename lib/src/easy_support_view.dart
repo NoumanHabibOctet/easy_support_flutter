@@ -119,6 +119,7 @@ class _EasySupportViewState extends State<EasySupportView> {
         onPrimaryColor: onPrimaryColor,
         isFullScreen: widget.isFullScreen,
         onClose: () => Navigator.of(context).maybePop(),
+        onChatEnded: _onChatEnded,
         config: widget.config,
         session: _session,
         channelConfiguration: channel,
@@ -412,6 +413,18 @@ class _EasySupportViewState extends State<EasySupportView> {
     debugPrint(
       'EasySupport screen: $screenName, customer_id: ${_session.customerId}',
     );
+  }
+
+  void _onChatEnded() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _session = EasySupportCustomerSession(
+        customerId: _session.customerId,
+        channelId: _session.channelId,
+      );
+    });
   }
 
   Future<void> _loadCustomerSession() async {

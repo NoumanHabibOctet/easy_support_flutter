@@ -26,6 +26,7 @@ class EasySupportChatView extends StatefulWidget {
     required this.onPrimaryColor,
     required this.isFullScreen,
     required this.onClose,
+    required this.onChatEnded,
     required this.config,
     required this.session,
     this.channelConfiguration,
@@ -37,6 +38,7 @@ class EasySupportChatView extends StatefulWidget {
   final Color onPrimaryColor;
   final bool isFullScreen;
   final VoidCallback onClose;
+  final VoidCallback onChatEnded;
   final EasySupportConfig config;
   final EasySupportCustomerSession session;
   final EasySupportChannelConfiguration? channelConfiguration;
@@ -521,7 +523,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
 
     final chatId = widget.session.chatId;
     if (chatId == null || chatId.trim().isEmpty) {
-      widget.onClose();
+      widget.onChatEnded();
       return;
     }
 
@@ -553,6 +555,10 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
       await _connectChatSocketIfPossible();
       final activeConnection = _chatSocketConnection;
       if (activeConnection != null) {
+        await _emitUserClosedNotification(
+          activeConnection: activeConnection,
+          chatId: chatId,
+        );
         await activeConnection.leaveChat(chatId);
       }
 
@@ -570,7 +576,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
       if (!mounted) {
         return;
       }
-      widget.onClose();
+      widget.onChatEnded();
     } catch (error) {
       if (!mounted) {
         return;
@@ -629,8 +635,30 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   }
 
   void _onChatStateChanged() {
+    _ensureGreetingMessageIfEnabled();
     _scrollToBottom();
     _checkAgentClosedNotificationAndHandle();
+  }
+
+  void _ensureGreetingMessageIfEnabled() {
+    if (widget.channelConfiguration?.isGreetingEnabled != true) {
+      return;
+    }
+
+    final greetingMessage = widget.channelConfiguration?.greetingMessage;
+    if (greetingMessage == null || greetingMessage.trim().isEmpty) {
+      return;
+    }
+
+    final chatId = widget.session.chatId;
+    if (chatId == null || chatId.trim().isEmpty) {
+      return;
+    }
+
+    _controller.ensureGreetingMessage(
+      greetingMessage: greetingMessage,
+      chatId: chatId,
+    );
   }
 
   Future<void> _openEmojiPicker() async {
@@ -861,6 +889,10 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     await _connectChatSocketIfPossible();
     final activeConnection = _chatSocketConnection;
     if (activeConnection != null) {
+      await _emitUserClosedNotification(
+        activeConnection: activeConnection,
+        chatId: chatId,
+      );
       await activeConnection.leaveChat(chatId);
     }
 
@@ -877,7 +909,28 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     if (!mounted) {
       return;
     }
-    widget.onClose();
+    widget.onChatEnded();
+  }
+
+  Future<void> _emitUserClosedNotification({
+    required EasySupportChatSocketConnection activeConnection,
+    required String chatId,
+  }) async {
+    final customerId = widget.session.customerId?.trim();
+    if (customerId == null || customerId.isEmpty) {
+      return;
+    }
+
+    final payload = EasySupportChatEmitPayload(
+      chatId: chatId,
+      customerId: customerId,
+      author: '',
+      body: 'User closed the chat',
+      type: 'notification',
+      unseenCount: 1,
+    );
+
+    await activeConnection.sendChatMessage(payload);
   }
 
   void _scrollToBottom() {

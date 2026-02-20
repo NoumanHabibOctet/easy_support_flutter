@@ -106,6 +106,11 @@ class EasySupportChatController extends ValueNotifier<EasySupportChatState> {
     }
 
     final existing = value.messages;
+    if (message.isNotification &&
+        existing.any((item) => _isDuplicateNotification(item, message))) {
+      return;
+    }
+
     final incomingId = message.id?.trim();
     if (incomingId != null &&
         incomingId.isNotEmpty &&
@@ -122,6 +127,47 @@ class EasySupportChatController extends ValueNotifier<EasySupportChatState> {
     value = EasySupportChatState(
       status: EasySupportChatStatus.ready,
       messages: <EasySupportChatMessage>[...existing, message],
+    );
+  }
+
+  void ensureGreetingMessage({
+    required String greetingMessage,
+    required String chatId,
+  }) {
+    final normalizedGreeting = greetingMessage.trim();
+    final normalizedChatId = chatId.trim();
+    if (normalizedGreeting.isEmpty || normalizedChatId.isEmpty) {
+      return;
+    }
+
+    final existing = value.messages;
+    final greetingExists = existing.any(
+      (item) =>
+          (item.content ?? '').trim().toLowerCase() ==
+              normalizedGreeting.toLowerCase() &&
+          (item.chatId ?? '').trim() == normalizedChatId,
+    );
+    if (greetingExists) {
+      return;
+    }
+
+    final greeting = EasySupportChatMessage(
+      id: 'local_greeting_$normalizedChatId',
+      chatId: normalizedChatId,
+      customerId: null,
+      agentId: 'system',
+      content: normalizedGreeting,
+      type: 'message',
+      isSeen: true,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0).toIso8601String(),
+    );
+
+    value = EasySupportChatState(
+      status: value.status == EasySupportChatStatus.initial
+          ? EasySupportChatStatus.ready
+          : value.status,
+      messages: <EasySupportChatMessage>[greeting, ...existing],
+      error: value.error,
     );
   }
 
@@ -164,6 +210,38 @@ class EasySupportChatController extends ValueNotifier<EasySupportChatState> {
     if (aCreatedAt != null && bCreatedAt != null) {
       final delta = aCreatedAt.difference(bCreatedAt).inSeconds.abs();
       if (delta > 120) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool _isDuplicateNotification(
+    EasySupportChatMessage a,
+    EasySupportChatMessage b,
+  ) {
+    if (!a.isNotification || !b.isNotification) {
+      return false;
+    }
+
+    final aContent = (a.content ?? '').trim().toLowerCase();
+    final bContent = (b.content ?? '').trim().toLowerCase();
+    if (aContent.isEmpty || bContent.isEmpty || aContent != bContent) {
+      return false;
+    }
+
+    final aChat = (a.chatId ?? '').trim();
+    final bChat = (b.chatId ?? '').trim();
+    if (aChat.isNotEmpty && bChat.isNotEmpty && aChat != bChat) {
+      return false;
+    }
+
+    final aCreatedAt = DateTime.tryParse((a.createdAt ?? '').trim());
+    final bCreatedAt = DateTime.tryParse((b.createdAt ?? '').trim());
+    if (aCreatedAt != null && bCreatedAt != null) {
+      final delta = aCreatedAt.difference(bCreatedAt).inSeconds.abs();
+      if (delta > 300) {
         return false;
       }
     }

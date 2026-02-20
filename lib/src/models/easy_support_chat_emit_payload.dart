@@ -4,6 +4,7 @@ class EasySupportChatEmitPayload {
     required this.chatId,
     required this.customerId,
     this.author = '',
+    this.type,
     this.unseenCount = 1,
   });
 
@@ -13,6 +14,7 @@ class EasySupportChatEmitPayload {
       body: json['body'] as String? ?? '',
       chatId: json['chat_id'] as String? ?? '',
       customerId: json['customer_id'] as String? ?? '',
+      type: json['type'] as String?,
       unseenCount: json['unseen_count'] as int? ?? 1,
     );
   }
@@ -21,6 +23,7 @@ class EasySupportChatEmitPayload {
   final String body;
   final String chatId;
   final String customerId;
+  final String? type;
   final int unseenCount;
 
   Map<String, dynamic> toJson() {
@@ -29,6 +32,7 @@ class EasySupportChatEmitPayload {
       'body': body,
       'chat_id': chatId,
       'customer_id': customerId,
+      if (type != null && type!.trim().isNotEmpty) 'type': type,
       'unseen_count': unseenCount,
     };
   }
