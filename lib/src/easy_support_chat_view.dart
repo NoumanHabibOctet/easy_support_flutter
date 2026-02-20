@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'easy_support_chat_controller.dart';
 import 'easy_support_repository.dart';
@@ -84,191 +85,220 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
 
   @override
   Widget build(BuildContext context) {
-    final headerStart = EasySupportColorUtils.blend(
-        widget.primaryColor, const Color(0xFFB000FF), 0.52);
-    final headerEnd = EasySupportColorUtils.blend(
-        widget.primaryColor, const Color(0xFF8A2BE2), 0.26);
+    final headerStart =
+        EasySupportColorUtils.blend(widget.primaryColor, Colors.black, 0.12);
+    final headerEnd =
+        EasySupportColorUtils.blend(widget.primaryColor, Colors.white, 0.08);
+    const surfaceColor = Color(0xFFF6F7FA);
+    final inputBorderColor =
+        EasySupportColorUtils.blend(widget.primaryColor, Colors.black, 0.04);
+    final systemUiStyle = SystemUiOverlayStyle(
+      statusBarColor: widget.primaryColor,
+      statusBarIconBrightness: widget.onPrimaryColor == Colors.white
+          ? Brightness.light
+          : Brightness.dark,
+      statusBarBrightness: widget.onPrimaryColor == Colors.white
+          ? Brightness.dark
+          : Brightness.light,
+    );
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Color(0xFFF2F3F6),
-      ),
-      child: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: <Color>[headerStart, headerEnd],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: systemUiStyle,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: surfaceColor,
+        ),
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: <Color>[headerStart, headerEnd],
+                ),
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(20)),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(14),
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+              padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: widget.onPrimaryColor,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                _buildHeaderIcon(
-                  icon: Icons.logout_rounded,
-                  onTap: _isLeaving ? () {} : _onLeaveChatPressed,
-                ),
-                const SizedBox(width: 6),
-                _buildHeaderIcon(
-                  icon: Icons.close_rounded,
-                  onTap: widget.onClose,
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF4F5F7),
-              ),
-              child: ValueListenableBuilder<EasySupportChatState>(
-                valueListenable: _controller,
-                builder: (context, state, _) {
-                  if (state.isLoading && state.messages.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (state.status == EasySupportChatStatus.error &&
-                      state.messages.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'Failed to load messages',
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView.separated(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(10, 12, 10, 16),
-                    itemCount: state.messages.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final message = state.messages[index];
-                      return _buildMessageBubble(message);
-                    },
-                  );
-                },
-              ),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(14),
-              ),
-              border: Border(
-                top: BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-            child: Column(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: headerStart, width: 2),
+                  _buildHeaderIcon(
+                    icon: Icons.logout_rounded,
+                    iconColor: widget.onPrimaryColor,
+                    onTap: _isLeaving ? () {} : _onLeaveChatPressed,
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _sendMessage(),
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: 'Type your message',
-                            hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                  const SizedBox(width: 8),
+                  _buildHeaderIcon(
+                    icon: Icons.close_rounded,
+                    iconColor: widget.onPrimaryColor,
+                    onTap: widget.onClose,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: surfaceColor,
+                ),
+                child: ValueListenableBuilder<EasySupportChatState>(
+                  valueListenable: _controller,
+                  builder: (context, state, _) {
+                    if (state.isLoading && state.messages.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (state.status == EasySupportChatStatus.error &&
+                        state.messages.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'Failed to load messages',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                      Icon(Icons.attach_file_rounded,
-                          color: Colors.grey.shade600),
-                      const SizedBox(width: 8),
-                      Icon(Icons.sentiment_satisfied,
-                          color: Colors.grey.shade600),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed:
-                            _isSending || _messageController.text.trim().isEmpty
-                                ? null
-                                : _sendMessage,
-                        icon: _isSending
-                            ? SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.grey.shade600,
-                                  ),
-                                ),
-                              )
-                            : Icon(
-                                Icons.send_rounded,
-                                color: _messageController.text.trim().isEmpty
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade700,
-                              ),
-                      ),
-                    ],
-                  ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(12, 16, 12, 18),
+                      itemCount: state.messages.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final message = state.messages[index];
+                        return _buildMessageBubble(message);
+                      },
+                    );
+                  },
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Powered by Easy Support',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(22),
+                  bottom: Radius.circular(18),
+                ),
+                border: Border(
+                  top: BorderSide(color: Colors.grey.shade200),
+                ),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 18,
+                    offset: const Offset(0, -6),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+              child: Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: inputBorderColor, width: 2),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _messageController,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _sendMessage(),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              hintText: 'Type your message',
+                              hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.attach_file_rounded,
+                            color: Colors.grey.shade600),
+                        const SizedBox(width: 8),
+                        Icon(Icons.sentiment_satisfied,
+                            color: Colors.grey.shade600),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _isSending ||
+                                  _messageController.text.trim().isEmpty
+                              ? null
+                              : _sendMessage,
+                          icon: _isSending
+                              ? SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.grey.shade600,
+                                    ),
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.send_rounded,
+                                  color: _messageController.text.trim().isEmpty
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade700,
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Powered by Easy Support',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildHeaderIcon({
     required IconData icon,
+    required Color iconColor,
     required VoidCallback onTap,
   }) {
     return Material(
-      color: Colors.white.withOpacity(0.2),
+      color: iconColor.withOpacity(0.2),
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(6),
-          child: Icon(icon, color: Colors.white, size: 20),
+          child: Icon(icon, color: iconColor, size: 20),
         ),
       ),
     );
@@ -306,7 +336,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     final alignment =
         isCustomerMessage ? Alignment.centerRight : Alignment.centerLeft;
     final bubbleColor =
-        isCustomerMessage ? const Color(0xFFD100FF) : const Color(0xFFF3F4F6);
+        isCustomerMessage ? widget.primaryColor : const Color(0xFFF3F4F6);
     final textColor =
         isCustomerMessage ? Colors.white : const Color(0xFF374151);
     final border =
