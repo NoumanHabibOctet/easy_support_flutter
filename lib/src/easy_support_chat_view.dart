@@ -252,6 +252,9 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
                       ignoring: isComposerLocked,
                       child: Container(
                         decoration: BoxDecoration(
+                          color: isComposerLocked
+                              ? const Color(0xFFE5E7EB)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(28),
                           border: Border.all(color: inputBorderColor, width: 2),
                         ),
@@ -262,13 +265,21 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
                               child: TextField(
                                 controller: _messageController,
                                 enabled: !isComposerLocked,
+                                style: TextStyle(
+                                  color: isComposerLocked
+                                      ? const Color(0xFF6B7280)
+                                      : const Color(0xFF111827),
+                                ),
                                 textInputAction: TextInputAction.send,
                                 onSubmitted: (_) => _sendMessage(),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   border: InputBorder.none,
                                   hintText: 'Type your message',
-                                  hintStyle:
-                                      TextStyle(color: Color(0xFF9CA3AF)),
+                                  hintStyle: TextStyle(
+                                    color: isComposerLocked
+                                        ? const Color(0xFF9CA3AF)
+                                        : const Color(0xFF9CA3AF),
+                                  ),
                                 ),
                               ),
                             ),
