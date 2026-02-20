@@ -7,16 +7,13 @@ class EasySupportConfig {
     this.apiBaseUrl,
     this.channelKey,
     this.widgetTitle,
+    this.webViewUrl,
     this.autoOpen = true,
     this.isEmojiEnabled = true,
     this.isMediaEnabled = true,
-    this.useWebView = false,
-    this.webViewUrl,
-    this.socketPath,
-    this.socketNamespace,
-    this.socketTransports = const <String>['websocket', 'polling'],
-    this.socketAuth = const <String, dynamic>{},
-    this.socketQuery = const <String, dynamic>{},
+    this.useWebSocketChannel = false,
+    this.webSocketChannelUrl,
+    this.webSocketChannelSocketIoMode = false,
     this.additionalHeaders = const <String, String>{},
   }) : assert(channelToken != '', 'channelToken cannot be empty.');
 
@@ -42,6 +39,8 @@ class EasySupportConfig {
           json['channelKey'] as String?,
       widgetTitle:
           json['widget_title'] as String? ?? json['widgetTitle'] as String?,
+      webViewUrl:
+          json['web_view_url'] as String? ?? json['webViewUrl'] as String?,
       autoOpen: json['auto_open'] as bool? ?? json['autoOpen'] as bool? ?? true,
       isEmojiEnabled: json['is_emoji_enabled'] as bool? ??
           json['isEmojiEnabled'] as bool? ??
@@ -49,21 +48,15 @@ class EasySupportConfig {
       isMediaEnabled: json['is_media_enabled'] as bool? ??
           json['isMediaEnabled'] as bool? ??
           true,
-      useWebView:
-          json['use_web_view'] as bool? ?? json['useWebView'] as bool? ?? false,
-      webViewUrl:
-          json['web_view_url'] as String? ?? json['webViewUrl'] as String?,
-      socketPath:
-          json['socket_path'] as String? ?? json['socketPath'] as String?,
-      socketNamespace: json['socket_namespace'] as String? ??
-          json['socketNamespace'] as String?,
-      socketTransports: _parseStringList(
-        json['socket_transports'] ?? json['socketTransports'],
-        fallback: const <String>['websocket', 'polling'],
-      ),
-      socketAuth: _parseDynamicMap(json['socket_auth'] ?? json['socketAuth']),
-      socketQuery:
-          _parseDynamicMap(json['socket_query'] ?? json['socketQuery']),
+      useWebSocketChannel: json['use_web_socket_channel'] as bool? ??
+          json['useWebSocketChannel'] as bool? ??
+          false,
+      webSocketChannelUrl: json['web_socket_channel_url'] as String? ??
+          json['webSocketChannelUrl'] as String?,
+      webSocketChannelSocketIoMode:
+          json['web_socket_channel_socket_io_mode'] as bool? ??
+              json['webSocketChannelSocketIoMode'] as bool? ??
+              false,
       additionalHeaders: headers,
     );
   }
@@ -73,16 +66,13 @@ class EasySupportConfig {
   final String? apiBaseUrl;
   final String? channelKey;
   final String? widgetTitle;
+  final String? webViewUrl;
   final bool autoOpen;
   final bool isEmojiEnabled;
   final bool isMediaEnabled;
-  final bool useWebView;
-  final String? webViewUrl;
-  final String? socketPath;
-  final String? socketNamespace;
-  final List<String> socketTransports;
-  final Map<String, dynamic> socketAuth;
-  final Map<String, dynamic> socketQuery;
+  final bool useWebSocketChannel;
+  final String? webSocketChannelUrl;
+  final bool webSocketChannelSocketIoMode;
   final Map<String, String> additionalHeaders;
 
   Map<String, dynamic> toJson() {
@@ -92,16 +82,14 @@ class EasySupportConfig {
       if (apiBaseUrl != null) 'api_base_url': apiBaseUrl,
       if (channelKey != null) 'channelkey': channelKey,
       if (widgetTitle != null) 'widget_title': widgetTitle,
+      if (webViewUrl != null) 'web_view_url': webViewUrl,
       'auto_open': autoOpen,
       'is_emoji_enabled': isEmojiEnabled,
       'is_media_enabled': isMediaEnabled,
-      'use_web_view': useWebView,
-      if (webViewUrl != null) 'web_view_url': webViewUrl,
-      if (socketPath != null) 'socket_path': socketPath,
-      if (socketNamespace != null) 'socket_namespace': socketNamespace,
-      if (socketTransports.isNotEmpty) 'socket_transports': socketTransports,
-      if (socketAuth.isNotEmpty) 'socket_auth': socketAuth,
-      if (socketQuery.isNotEmpty) 'socket_query': socketQuery,
+      'use_web_socket_channel': useWebSocketChannel,
+      if (webSocketChannelUrl != null)
+        'web_socket_channel_url': webSocketChannelUrl,
+      'web_socket_channel_socket_io_mode': webSocketChannelSocketIoMode,
       if (additionalHeaders.isNotEmpty) 'additional_headers': additionalHeaders,
     };
   }
@@ -139,20 +127,16 @@ class EasySupportConfig {
       'autoOpen': autoOpen,
       'isEmojiEnabled': isEmojiEnabled,
       'isMediaEnabled': isMediaEnabled,
-      'useWebView': useWebView,
-      if (webViewUrl != null && webViewUrl!.trim().isNotEmpty)
-        'webViewUrl': webViewUrl!.trim(),
-      if (socketPath != null && socketPath!.trim().isNotEmpty)
-        'socketPath': socketPath!.trim(),
-      if (socketNamespace != null && socketNamespace!.trim().isNotEmpty)
-        'socketNamespace': socketNamespace!.trim(),
-      if (socketTransports.isNotEmpty) 'socketTransports': socketTransports,
-      if (socketAuth.isNotEmpty) 'socketAuth': socketAuth,
-      if (socketQuery.isNotEmpty) 'socketQuery': socketQuery,
+      'useWebSocketChannel': useWebSocketChannel,
+      if (webSocketChannelUrl != null && webSocketChannelUrl!.trim().isNotEmpty)
+        'webSocketChannelUrl': webSocketChannelUrl!.trim(),
+      'webSocketChannelSocketIoMode': webSocketChannelSocketIoMode,
       if (channelKey != null && channelKey!.trim().isNotEmpty)
         'channelKey': channelKey!.trim(),
       if (widgetTitle != null && widgetTitle!.trim().isNotEmpty)
         'widgetTitle': widgetTitle!.trim(),
+      if (webViewUrl != null && webViewUrl!.trim().isNotEmpty)
+        'webViewUrl': webViewUrl!.trim(),
       if (resolvedHeaders.isNotEmpty) 'additionalHeaders': resolvedHeaders,
     };
   }
@@ -165,16 +149,13 @@ class EasySupportConfig {
     String? apiBaseUrl,
     String? channelKey,
     String? widgetTitle,
+    String? webViewUrl,
     bool? autoOpen,
     bool? isEmojiEnabled,
     bool? isMediaEnabled,
-    bool? useWebView,
-    String? webViewUrl,
-    String? socketPath,
-    String? socketNamespace,
-    List<String>? socketTransports,
-    Map<String, dynamic>? socketAuth,
-    Map<String, dynamic>? socketQuery,
+    bool? useWebSocketChannel,
+    String? webSocketChannelUrl,
+    bool? webSocketChannelSocketIoMode,
     Map<String, String>? additionalHeaders,
   }) {
     return EasySupportConfig(
@@ -183,16 +164,14 @@ class EasySupportConfig {
       apiBaseUrl: apiBaseUrl ?? this.apiBaseUrl,
       channelKey: channelKey ?? this.channelKey,
       widgetTitle: widgetTitle ?? this.widgetTitle,
+      webViewUrl: webViewUrl ?? this.webViewUrl,
       autoOpen: autoOpen ?? this.autoOpen,
       isEmojiEnabled: isEmojiEnabled ?? this.isEmojiEnabled,
       isMediaEnabled: isMediaEnabled ?? this.isMediaEnabled,
-      useWebView: useWebView ?? this.useWebView,
-      webViewUrl: webViewUrl ?? this.webViewUrl,
-      socketPath: socketPath ?? this.socketPath,
-      socketNamespace: socketNamespace ?? this.socketNamespace,
-      socketTransports: socketTransports ?? this.socketTransports,
-      socketAuth: socketAuth ?? this.socketAuth,
-      socketQuery: socketQuery ?? this.socketQuery,
+      useWebSocketChannel: useWebSocketChannel ?? this.useWebSocketChannel,
+      webSocketChannelUrl: webSocketChannelUrl ?? this.webSocketChannelUrl,
+      webSocketChannelSocketIoMode:
+          webSocketChannelSocketIoMode ?? this.webSocketChannelSocketIoMode,
       additionalHeaders: additionalHeaders ?? this.additionalHeaders,
     );
   }
@@ -215,31 +194,5 @@ class EasySupportConfig {
       return headers;
     }
     return const <String, String>{};
-  }
-
-  static Map<String, dynamic> _parseDynamicMap(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
-    if (value is Map) {
-      return Map<String, dynamic>.from(value);
-    }
-    return const <String, dynamic>{};
-  }
-
-  static List<String> _parseStringList(
-    dynamic value, {
-    required List<String> fallback,
-  }) {
-    if (value is List) {
-      final parsed = value
-          .map((dynamic item) => '$item'.trim())
-          .where((String item) => item.isNotEmpty)
-          .toList(growable: false);
-      if (parsed.isNotEmpty) {
-        return parsed;
-      }
-    }
-    return fallback;
   }
 }

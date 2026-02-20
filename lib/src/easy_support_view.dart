@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 import 'easy_support_chat_view.dart';
 import 'easy_support_conversation_controller.dart';
 import 'easy_support_customer_local_storage.dart';
-import 'easy_support_error_callback.dart';
 import 'easy_support_repository.dart';
 import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_config.dart';
@@ -18,6 +18,8 @@ import 'widgets/easy_support_hero_section.dart';
 import 'widgets/easy_support_input_field.dart';
 import 'widgets/easy_support_message_card.dart';
 import 'widgets/easy_support_stack_loader.dart';
+
+typedef EasySupportErrorCallback = void Function(WebResourceError error);
 
 class EasySupportView extends StatefulWidget {
   const EasySupportView({

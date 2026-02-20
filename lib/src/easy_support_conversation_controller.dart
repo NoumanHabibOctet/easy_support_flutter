@@ -1,6 +1,7 @@
 import 'easy_support_customer_local_storage.dart';
 import 'easy_support_repository.dart';
 import 'easy_support_socket_service.dart';
+import 'easy_support_socket_service_resolver.dart';
 import 'models/easy_support_config.dart';
 import 'models/easy_support_customer_action.dart';
 import 'models/easy_support_customer_response.dart';
@@ -14,7 +15,7 @@ class EasySupportConversationController {
     EasySupportSocketService? socketService,
   })  : _repository = repository,
         _localStorage = localStorage,
-        _socketService = socketService ?? EasySupportSocketIoService();
+        _socketService = socketService ?? EasySupportSocketServiceResolver();
 
   final EasySupportRepository _repository;
   final EasySupportCustomerLocalStorage _localStorage;

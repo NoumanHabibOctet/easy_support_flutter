@@ -414,75 +414,19 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       RegExp(r'/$'),
       '',
     );
-    final socketNamespace = _normalizeSocketNamespace(config.socketNamespace);
-    final socketPath = _normalizeSocketPath(config.socketPath);
-    final socketUrl = socketNamespace == null
-        ? socketBaseUrl
-        : '$socketBaseUrl$socketNamespace';
-    final transports = config.socketTransports.isNotEmpty
-        ? config.socketTransports
-        : const <String>['websocket', 'polling'];
-    final socketQuery = config.socketQuery;
-    final socketAuth = config.socketAuth;
-
-    _log(
-      'socket build url=$socketUrl path=${socketPath ?? '/socket.io/'} '
-      'transports=$transports '
-      'queryKeys=${socketQuery.keys.toList()} '
-      'authKeys=${socketAuth.keys.toList()} '
-      'headerKeys=${config.resolvedHeaders.keys.toList()}',
-    );
-
-    final builder = io.OptionBuilder()
-        .setTransports(transports)
-        .disableAutoConnect()
-        .enableReconnection()
-        .setReconnectionAttempts(999999)
-        .setReconnectionDelay(1000)
-        .setReconnectionDelayMax(5000)
-        .setExtraHeaders(config.resolvedHeaders);
-    if (socketPath != null) {
-      builder.setPath(socketPath);
-    }
-    if (socketQuery.isNotEmpty) {
-      builder.setQuery(socketQuery);
-    }
-    if (socketAuth.isNotEmpty) {
-      builder.setAuth(socketAuth);
-    }
 
     return io.io(
-      socketUrl,
-      builder.build(),
+      socketBaseUrl,
+      io.OptionBuilder()
+          .setTransports(<String>['websocket', 'polling'])
+          .disableAutoConnect()
+          .enableReconnection()
+          .setReconnectionAttempts(999999)
+          .setReconnectionDelay(1000)
+          .setReconnectionDelayMax(5000)
+          .setExtraHeaders(config.resolvedHeaders)
+          .build(),
     );
-  }
-
-  static String? _normalizeSocketNamespace(String? value) {
-    if (value == null) {
-      return null;
-    }
-    final normalized = value.trim();
-    if (normalized.isEmpty || normalized == '/') {
-      return null;
-    }
-    if (normalized.startsWith('/')) {
-      return normalized;
-    }
-    return '/$normalized';
-  }
-
-  static String? _normalizeSocketPath(String? value) {
-    if (value == null) {
-      return null;
-    }
-    final normalized = value.trim();
-    if (normalized.isEmpty) {
-      return null;
-    }
-    if (normalized.startsWith('/')) {
-      return normalized;
-    }
-    return '/$normalized';
   }
 
   static String? _extractChatId(dynamic payload) {

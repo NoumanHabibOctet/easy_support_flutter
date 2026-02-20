@@ -7,6 +7,7 @@ import 'easy_support_repository.dart';
 import 'easy_support_chat_socket_connection.dart';
 import 'easy_support_customer_local_storage.dart';
 import 'easy_support_socket_service.dart';
+import 'easy_support_socket_service_resolver.dart';
 import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_chat_emit_payload.dart';
 import 'models/easy_support_feedback_submission.dart';
@@ -60,7 +61,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     _controller = EasySupportChatController(
       repository: widget.repository ?? EasySupportDioRepository(),
     );
-    _socketService = EasySupportSocketIoService();
+    _socketService = EasySupportSocketServiceResolver();
     _controller.addListener(_onChatStateChanged);
     _messageController.addListener(_onMessageChanged);
     _loadMessages();
