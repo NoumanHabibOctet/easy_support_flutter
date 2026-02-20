@@ -113,9 +113,61 @@ class EasySupportChatController extends ValueNotifier<EasySupportChatState> {
       return;
     }
 
+    // Some socket events come without id; dedupe by semantic fingerprint.
+    if ((incomingId == null || incomingId.isEmpty) &&
+        existing.any((item) => _isSemanticallySameMessage(item, message))) {
+      return;
+    }
+
     value = EasySupportChatState(
       status: EasySupportChatStatus.ready,
       messages: <EasySupportChatMessage>[...existing, message],
     );
+  }
+
+  bool _isSemanticallySameMessage(
+    EasySupportChatMessage a,
+    EasySupportChatMessage b,
+  ) {
+    final aContent = (a.content ?? '').trim().toLowerCase();
+    final bContent = (b.content ?? '').trim().toLowerCase();
+    if (aContent.isEmpty || bContent.isEmpty || aContent != bContent) {
+      return false;
+    }
+
+    final aType = (a.type ?? '').trim().toLowerCase();
+    final bType = (b.type ?? '').trim().toLowerCase();
+    if (aType != bType) {
+      return false;
+    }
+
+    final aChat = (a.chatId ?? '').trim();
+    final bChat = (b.chatId ?? '').trim();
+    if (aChat.isNotEmpty && bChat.isNotEmpty && aChat != bChat) {
+      return false;
+    }
+
+    final aCustomer = (a.customerId ?? '').trim();
+    final bCustomer = (b.customerId ?? '').trim();
+    if (aCustomer != bCustomer) {
+      return false;
+    }
+
+    final aAgent = (a.agentId ?? '').trim();
+    final bAgent = (b.agentId ?? '').trim();
+    if (aAgent != bAgent) {
+      return false;
+    }
+
+    final aCreatedAt = DateTime.tryParse((a.createdAt ?? '').trim());
+    final bCreatedAt = DateTime.tryParse((b.createdAt ?? '').trim());
+    if (aCreatedAt != null && bCreatedAt != null) {
+      final delta = aCreatedAt.difference(bCreatedAt).inSeconds.abs();
+      if (delta > 120) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
