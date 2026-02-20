@@ -10,6 +10,13 @@ class EasySupportConfig {
     this.autoOpen = true,
     this.isEmojiEnabled = true,
     this.isMediaEnabled = true,
+    this.useWebView = false,
+    this.webViewUrl,
+    this.socketPath,
+    this.socketNamespace,
+    this.socketTransports = const <String>['websocket', 'polling'],
+    this.socketAuth = const <String, dynamic>{},
+    this.socketQuery = const <String, dynamic>{},
     this.additionalHeaders = const <String, String>{},
   }) : assert(channelToken != '', 'channelToken cannot be empty.');
 
@@ -42,6 +49,21 @@ class EasySupportConfig {
       isMediaEnabled: json['is_media_enabled'] as bool? ??
           json['isMediaEnabled'] as bool? ??
           true,
+      useWebView:
+          json['use_web_view'] as bool? ?? json['useWebView'] as bool? ?? false,
+      webViewUrl:
+          json['web_view_url'] as String? ?? json['webViewUrl'] as String?,
+      socketPath:
+          json['socket_path'] as String? ?? json['socketPath'] as String?,
+      socketNamespace: json['socket_namespace'] as String? ??
+          json['socketNamespace'] as String?,
+      socketTransports: _parseStringList(
+        json['socket_transports'] ?? json['socketTransports'],
+        fallback: const <String>['websocket', 'polling'],
+      ),
+      socketAuth: _parseDynamicMap(json['socket_auth'] ?? json['socketAuth']),
+      socketQuery:
+          _parseDynamicMap(json['socket_query'] ?? json['socketQuery']),
       additionalHeaders: headers,
     );
   }
@@ -54,6 +76,13 @@ class EasySupportConfig {
   final bool autoOpen;
   final bool isEmojiEnabled;
   final bool isMediaEnabled;
+  final bool useWebView;
+  final String? webViewUrl;
+  final String? socketPath;
+  final String? socketNamespace;
+  final List<String> socketTransports;
+  final Map<String, dynamic> socketAuth;
+  final Map<String, dynamic> socketQuery;
   final Map<String, String> additionalHeaders;
 
   Map<String, dynamic> toJson() {
@@ -66,6 +95,13 @@ class EasySupportConfig {
       'auto_open': autoOpen,
       'is_emoji_enabled': isEmojiEnabled,
       'is_media_enabled': isMediaEnabled,
+      'use_web_view': useWebView,
+      if (webViewUrl != null) 'web_view_url': webViewUrl,
+      if (socketPath != null) 'socket_path': socketPath,
+      if (socketNamespace != null) 'socket_namespace': socketNamespace,
+      if (socketTransports.isNotEmpty) 'socket_transports': socketTransports,
+      if (socketAuth.isNotEmpty) 'socket_auth': socketAuth,
+      if (socketQuery.isNotEmpty) 'socket_query': socketQuery,
       if (additionalHeaders.isNotEmpty) 'additional_headers': additionalHeaders,
     };
   }
@@ -103,6 +139,16 @@ class EasySupportConfig {
       'autoOpen': autoOpen,
       'isEmojiEnabled': isEmojiEnabled,
       'isMediaEnabled': isMediaEnabled,
+      'useWebView': useWebView,
+      if (webViewUrl != null && webViewUrl!.trim().isNotEmpty)
+        'webViewUrl': webViewUrl!.trim(),
+      if (socketPath != null && socketPath!.trim().isNotEmpty)
+        'socketPath': socketPath!.trim(),
+      if (socketNamespace != null && socketNamespace!.trim().isNotEmpty)
+        'socketNamespace': socketNamespace!.trim(),
+      if (socketTransports.isNotEmpty) 'socketTransports': socketTransports,
+      if (socketAuth.isNotEmpty) 'socketAuth': socketAuth,
+      if (socketQuery.isNotEmpty) 'socketQuery': socketQuery,
       if (channelKey != null && channelKey!.trim().isNotEmpty)
         'channelKey': channelKey!.trim(),
       if (widgetTitle != null && widgetTitle!.trim().isNotEmpty)
@@ -122,6 +168,13 @@ class EasySupportConfig {
     bool? autoOpen,
     bool? isEmojiEnabled,
     bool? isMediaEnabled,
+    bool? useWebView,
+    String? webViewUrl,
+    String? socketPath,
+    String? socketNamespace,
+    List<String>? socketTransports,
+    Map<String, dynamic>? socketAuth,
+    Map<String, dynamic>? socketQuery,
     Map<String, String>? additionalHeaders,
   }) {
     return EasySupportConfig(
@@ -133,6 +186,13 @@ class EasySupportConfig {
       autoOpen: autoOpen ?? this.autoOpen,
       isEmojiEnabled: isEmojiEnabled ?? this.isEmojiEnabled,
       isMediaEnabled: isMediaEnabled ?? this.isMediaEnabled,
+      useWebView: useWebView ?? this.useWebView,
+      webViewUrl: webViewUrl ?? this.webViewUrl,
+      socketPath: socketPath ?? this.socketPath,
+      socketNamespace: socketNamespace ?? this.socketNamespace,
+      socketTransports: socketTransports ?? this.socketTransports,
+      socketAuth: socketAuth ?? this.socketAuth,
+      socketQuery: socketQuery ?? this.socketQuery,
       additionalHeaders: additionalHeaders ?? this.additionalHeaders,
     );
   }
@@ -155,5 +215,31 @@ class EasySupportConfig {
       return headers;
     }
     return const <String, String>{};
+  }
+
+  static Map<String, dynamic> _parseDynamicMap(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+    return const <String, dynamic>{};
+  }
+
+  static List<String> _parseStringList(
+    dynamic value, {
+    required List<String> fallback,
+  }) {
+    if (value is List) {
+      final parsed = value
+          .map((dynamic item) => '$item'.trim())
+          .where((String item) => item.isNotEmpty)
+          .toList(growable: false);
+      if (parsed.isNotEmpty) {
+        return parsed;
+      }
+    }
+    return fallback;
   }
 }

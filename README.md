@@ -27,6 +27,15 @@ await EasySupport.init(
     apiBaseUrl: 'https://easysupport-portal.onevision.io/api/v1',
     channelToken: 'api_xxx',
     autoOpen: true,
+    // Optional: use hosted web widget inside app WebView
+    useWebView: false,
+    webViewUrl: 'https://easysupport-portal.onevision.io',
+    // Optional: make app socket config match your web client
+    socketPath: '/socket.io/',
+    socketNamespace: '/',
+    socketTransports: <String>['websocket', 'polling'],
+    socketQuery: <String, dynamic>{},
+    socketAuth: <String, dynamic>{},
   ),
 );
 
@@ -54,6 +63,8 @@ EasySupportView(
 - Init state is available via `EasySupport.state` / `EasySupport.stateListenable`.
 - Merged runtime config (input params + API response) is available via `EasySupport.resolvedConfig`.
 - Network workflow is handled by repository (`EasySupportRepository` -> `EasySupportDioRepository`) using `GET /channel/key`.
+- For socket compatibility with an existing web panel, align `socketPath`, `socketNamespace`, `socketTransports`, `socketQuery`, and `socketAuth`.
+- If `useWebView` is true, EasySupport opens a WebView and injects JS options from Flutter config.
 - Use public HTTPS URLs in production.
 - Do not expose secret server keys in client config.
 - Your backend must allow calls from app webview clients.

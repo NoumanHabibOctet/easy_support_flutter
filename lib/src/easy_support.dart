@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 
 import 'easy_support_controller.dart';
 import 'easy_support_customer_local_storage.dart';
+import 'easy_support_error_callback.dart';
 import 'easy_support_repository.dart';
 import 'easy_support_screen.dart';
-import 'easy_support_view.dart';
 import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_config.dart';
 

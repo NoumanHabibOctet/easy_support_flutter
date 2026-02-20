@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'easy_support_error_callback.dart';
 import 'easy_support_view.dart';
+import 'easy_support_web_view.dart';
 import 'models/easy_support_channel_configuration.dart';
 import 'models/easy_support_config.dart';
 
@@ -20,12 +22,18 @@ class EasySupportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = EasySupportView(
-      config: config,
-      channelConfiguration: channelConfiguration,
-      isFullScreen: true,
-      onError: onError,
-    );
+    final content = config.useWebView
+        ? EasySupportWebView(
+            config: config,
+            channelConfiguration: channelConfiguration,
+            onError: onError,
+          )
+        : EasySupportView(
+            config: config,
+            channelConfiguration: channelConfiguration,
+            isFullScreen: true,
+            onError: onError,
+          );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F3F5),
