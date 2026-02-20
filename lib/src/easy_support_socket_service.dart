@@ -415,6 +415,7 @@ class EasySupportSocketIoService implements EasySupportSocketService {
       '',
     );
 
+    print("base url or socket is --> $socketBaseUrl");
     return io.io(
       socketBaseUrl,
       io.OptionBuilder()
