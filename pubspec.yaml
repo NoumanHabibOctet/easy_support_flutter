@@ -1,7 +1,9 @@
 name: easy_support_flutter
-description: "A new Flutter package project."
+description: "Easy Support Flutter SDK with channel bootstrap, customer session, and real-time chat."
 version: 0.0.1
-homepage:
+homepage: https://easysupport.onevision.io/
+repository: https://easysupport.onevision.io/
+issue_tracker: https://easysupport.onevision.io/
 
 environment:
   sdk: ^3.5.3

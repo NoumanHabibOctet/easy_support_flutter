@@ -1,12 +1,6 @@
 # easy_support_flutter
 
-A Flutter package for initializing and opening Easy Support.
-
-## What this package gives you
-
-- `EasySupport.init(config)` to set SDK config once
-- `EasySupport.open(context)` to open chat in a full-screen page
-- `EasySupportView(config: ...)` if you want to embed the widget directly
+Easy Support Flutter SDK.
 
 ## Install
 
@@ -16,39 +10,39 @@ dependencies:
     path: ../easy_support_flutter
 ```
 
-## Usage
+## Quick Start (Essential)
 
 ```dart
 import 'package:easy_support_flutter/easy_support_flutter.dart';
 
 await EasySupport.init(
-  const EasySupportConfig(
-    baseUrl: 'https://easysupport-portal.onevision.io',
-    apiBaseUrl: 'https://easysupport-portal.onevision.io/api/v1',
+  const EasySupportConfig.essentials(
+    baseUrl: 'https://easysupport.onevision.io',
     channelToken: 'api_xxx',
-    autoOpen: true,
-    // Optional: use web_socket_channel backend instead of socket_io_client.
-    useWebSocketChannel: false,
-    // Optional for web_socket_channel backend.
-    webSocketChannelUrl: 'wss://easysupport-portal.onevision.io/socket.io/?EIO=4&transport=websocket',
-    // If true, send/receive Socket.IO text frames through web_socket_channel.
-    webSocketChannelSocketIoMode: true,
   ),
 );
 
 await EasySupport.open(context);
 ```
 
-## Embed directly in a screen
+Only two values are required:
+- `baseUrl`
+- `channelToken`
+
+## Advanced Config
 
 ```dart
-EasySupportView(
+await EasySupport.init(
   config: const EasySupportConfig(
-    baseUrl: 'https://easysupport-portal.onevision.io',
-    apiBaseUrl: 'https://easysupport-portal.onevision.io/api/v1',
+    baseUrl: 'https://easysupport.onevision.io',
+    apiBaseUrl: 'https://easysupport.onevision.io/api/v1',
     channelToken: 'api_xxx',
+    autoOpen: true,
+    useWebSocketChannel: false,
+    webSocketChannelUrl: 'wss://easysupport.onevision.io/socket.io/?EIO=4&transport=websocket',
+    webSocketChannelSocketIoMode: true,
   ),
-)
+);
 ```
 
 ## Notes

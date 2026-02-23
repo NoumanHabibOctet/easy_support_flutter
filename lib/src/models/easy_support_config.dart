@@ -22,6 +22,14 @@ class EasySupportConfig {
     this.additionalHeaders = const <String, String>{},
   }) : assert(channelToken != '', 'channelToken cannot be empty.');
 
+  const EasySupportConfig.essentials({
+    required String baseUrl,
+    required String channelToken,
+  }) : this(
+          baseUrl: baseUrl,
+          channelToken: channelToken,
+        );
+
   factory EasySupportConfig.fromJson(Map<String, dynamic> json) {
     final headers = _parseHeaders(json['additional_headers']);
     final baseUrl = json['base_url'] as String? ?? json['baseUrl'] as String?;
