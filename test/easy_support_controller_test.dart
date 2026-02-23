@@ -1,4 +1,11 @@
-import 'package:easy_support_flutter/easy_support_flutter.dart';
+import 'package:easy_support_flutter/src/easy_support_controller.dart';
+import 'package:easy_support_flutter/src/easy_support_repository.dart';
+import 'package:easy_support_flutter/src/easy_support_retry_scheduler.dart';
+import 'package:easy_support_flutter/src/models/easy_support_channel_configuration.dart';
+import 'package:easy_support_flutter/src/models/easy_support_chat_messages_response.dart';
+import 'package:easy_support_flutter/src/models/easy_support_config.dart';
+import 'package:easy_support_flutter/src/models/easy_support_customer_action.dart';
+import 'package:easy_support_flutter/src/models/easy_support_customer_response.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -85,6 +92,14 @@ class _FakeSuccessRepository implements EasySupportRepository {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> submitFeedback({
+    required EasySupportConfig config,
+    required Map<String, dynamic> body,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _FakeFailureRepository implements EasySupportRepository {
@@ -122,6 +137,14 @@ class _FakeFailureRepository implements EasySupportRepository {
     int limit = 20,
     String sortOrder = 'desc',
     String sortBy = 'created_at',
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> submitFeedback({
+    required EasySupportConfig config,
+    required Map<String, dynamic> body,
   }) {
     throw UnimplementedError();
   }
@@ -173,6 +196,14 @@ class _FakeNetworkThenSuccessRepository implements EasySupportRepository {
     int limit = 20,
     String sortOrder = 'desc',
     String sortBy = 'created_at',
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> submitFeedback({
+    required EasySupportConfig config,
+    required Map<String, dynamic> body,
   }) {
     throw UnimplementedError();
   }

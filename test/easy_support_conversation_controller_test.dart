@@ -1,4 +1,17 @@
-import 'package:easy_support_flutter/easy_support_flutter.dart';
+import 'package:easy_support_flutter/src/easy_support_chat_socket_connection.dart';
+import 'package:easy_support_flutter/src/easy_support_conversation_controller.dart';
+import 'package:easy_support_flutter/src/easy_support_customer_local_storage.dart';
+import 'package:easy_support_flutter/src/easy_support_repository.dart';
+import 'package:easy_support_flutter/src/easy_support_socket_service.dart';
+import 'package:easy_support_flutter/src/models/easy_support_channel_configuration.dart';
+import 'package:easy_support_flutter/src/models/easy_support_chat_emit_payload.dart';
+import 'package:easy_support_flutter/src/models/easy_support_chat_message.dart';
+import 'package:easy_support_flutter/src/models/easy_support_chat_messages_response.dart';
+import 'package:easy_support_flutter/src/models/easy_support_config.dart';
+import 'package:easy_support_flutter/src/models/easy_support_customer_action.dart';
+import 'package:easy_support_flutter/src/models/easy_support_customer_response.dart';
+import 'package:easy_support_flutter/src/models/easy_support_customer_session.dart';
+import 'package:easy_support_flutter/src/models/easy_support_customer_submission.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -137,6 +150,14 @@ class _FakeConversationRepository implements EasySupportRepository {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> submitFeedback({
+    required EasySupportConfig config,
+    required Map<String, dynamic> body,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _FakeCustomerStorage implements EasySupportCustomerLocalStorage {
@@ -173,8 +194,9 @@ class _FakeSocketService implements EasySupportSocketService {
   Future<String> joinChat({
     required EasySupportConfig config,
     required String customerId,
+    String? chatId,
   }) async {
-    return chatId;
+    return this.chatId;
   }
 
   @override
@@ -200,6 +222,7 @@ class _FailingSocketService implements EasySupportSocketService {
   Future<String> joinChat({
     required EasySupportConfig config,
     required String customerId,
+    String? chatId,
   }) async {
     throw StateError('join failed');
   }
