@@ -1,26 +1,26 @@
 name: easy_support_flutter
 description: "Easy Support Flutter SDK with channel bootstrap, customer session, and real-time chat."
-version: 0.0.3
+version: 0.0.4
 repository: https://github.com/NoumanHabibOctet/easy_support_flutter.git
 
 environment:
-  sdk: ">=3.10.0 <4.0.0"
-  flutter: ">=3.38.0"
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
 
 dependencies:
   flutter:
     sdk: flutter
   dio: ^5.9.1
   image_picker: ^1.1.2
-  shared_preferences: ^2.5.4
+  shared_preferences: ^2.5.3
   socket_io_client: ^3.1.4
   web_socket_channel: ^3.0.3
-  webview_flutter: ^4.13.1
+  webview_flutter: ^4.9.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^4.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
