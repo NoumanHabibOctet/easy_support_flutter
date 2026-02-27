@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'easy_support_chat_controller.dart';
 import 'easy_support_repository.dart';
@@ -583,6 +585,26 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
 
   Future<void> _onAttachmentPressed() async {
     if (_isUploadingMedia || !_isMediaEnabled || _isChatClosedByAgent) {
+      debugPrint(
+        'EasySupport attach skipped | '
+        'isUploading=$_isUploadingMedia isMediaEnabled=$_isMediaEnabled '
+        'isChatClosed=$_isChatClosedByAgent',
+      );
+      return;
+    }
+
+    debugPrint('EasySupport attach tapped');
+    final hasAttachmentPermission = await _ensureAttachmentPermission();
+    if (!hasAttachmentPermission) {
+      debugPrint('EasySupport attach denied: media permission not granted');
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(
+          content: Text('Allow photo access to attach images'),
+        ),
+      );
       return;
     }
 
@@ -590,8 +612,13 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
       source: ImageSource.gallery,
     );
     if (selectedImage == null) {
+      debugPrint('EasySupport attach cancelled by user');
       return;
     }
+    debugPrint(
+      'EasySupport attach selected file: ${selectedImage.name} '
+      'path=${selectedImage.path}',
+    );
 
     final chatId = widget.session.chatId;
     final customerId = widget.session.customerId;
@@ -600,9 +627,14 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         chatId.trim().isEmpty ||
         customerId == null ||
         customerId.trim().isEmpty) {
+      debugPrint(
+        'EasySupport attach failed: missing chat/customer '
+        'chatId=$chatId customerId=$customerId',
+      );
       return;
     }
     if (workspaceId == null || workspaceId.isEmpty) {
+      debugPrint('EasySupport attach failed: workspace_id is missing');
       if (!mounted) {
         return;
       }
@@ -619,16 +651,22 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     });
 
     try {
+      debugPrint(
+        'EasySupport media upload start | workspaceId=$workspaceId '
+        'chatId=$chatId customerId=$customerId',
+      );
       final mediaUrl = await _repository.uploadCustomerMedia(
         config: widget.config,
         workspaceId: workspaceId,
         filePath: selectedImage.path,
         fileName: selectedImage.name,
       );
+      debugPrint('EasySupport media upload success | url=$mediaUrl');
 
       await _connectChatSocketIfPossible();
       final activeConnection = _chatSocketConnection;
       if (activeConnection == null) {
+        debugPrint('EasySupport media emit failed: socket is not connected');
         throw StateError('Chat socket is not connected');
       }
 
@@ -641,7 +679,9 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         unseenCount: 1,
       );
       await activeConnection.sendChatMessage(payload);
+      debugPrint('EasySupport media emit success | chat event=chat type=media');
     } catch (error) {
+      debugPrint('EasySupport media attach flow failed: $error');
       if (!mounted) {
         return;
       }
@@ -656,6 +696,39 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
           _isUploadingMedia = false;
         });
       }
+    }
+  }
+
+  Future<bool> _ensureAttachmentPermission() async {
+    if (kIsWeb) {
+      debugPrint('EasySupport attach permission bypass on web');
+      return true;
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        final photosStatus = await Permission.photos.request();
+        debugPrint(
+          'EasySupport Android photos permission status: $photosStatus',
+        );
+        if (photosStatus.isGranted || photosStatus.isLimited) {
+          return true;
+        }
+        final storageStatus = await Permission.storage.request();
+        debugPrint(
+          'EasySupport Android storage permission status: $storageStatus',
+        );
+        return storageStatus.isGranted;
+      case TargetPlatform.iOS:
+        final photosStatus = await Permission.photos.request();
+        debugPrint('EasySupport iOS photos permission status: $photosStatus');
+        return photosStatus.isGranted || photosStatus.isLimited;
+      default:
+        debugPrint(
+          'EasySupport attach permission bypass on platform: '
+          '$defaultTargetPlatform',
+        );
+        return true;
     }
   }
 
