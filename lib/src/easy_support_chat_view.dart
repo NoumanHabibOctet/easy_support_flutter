@@ -680,14 +680,27 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
       );
       await activeConnection.sendChatMessage(payload);
       debugPrint('EasySupport media emit success | chat event=chat type=media');
+    } on EasySupportApiException catch (error) {
+      debugPrint(
+        'EasySupport media attach api failed: '
+        'status=${error.statusCode} message=${error.message}',
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: Text(_buildMediaUploadErrorMessage(error)),
+        ),
+      );
     } catch (error) {
       debugPrint('EasySupport media attach flow failed: $error');
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(
-          content: Text('Media upload failed: $error'),
+        const SnackBar(
+          content: Text('Media upload failed. Please try again.'),
         ),
       );
     } finally {
@@ -730,6 +743,35 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         );
         return true;
     }
+  }
+
+  String _buildMediaUploadErrorMessage(EasySupportApiException error) {
+    final responseMessage = _extractResponseMessage(error.message);
+
+    if (error.statusCode == 400) {
+      if (responseMessage != null && responseMessage.isNotEmpty) {
+        return responseMessage;
+      }
+      return 'Upload failed (400). Please check image and try again.';
+    }
+
+    if (error.isNetworkError) {
+      return 'Network error while uploading image. Please try again.';
+    }
+
+    if (responseMessage != null && responseMessage.isNotEmpty) {
+      return responseMessage;
+    }
+    return 'Media upload failed. Please try again.';
+  }
+
+  String? _extractResponseMessage(String message) {
+    final match = RegExp(r'response=([^|]+)').firstMatch(message);
+    final value = match?.group(1)?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return value;
   }
 
   Future<void> _onLeaveChatPressed() async {

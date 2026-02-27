@@ -437,7 +437,7 @@ class EasySupportDioRepository implements EasySupportRepository {
     final headers = _buildRequiredHeaders(config);
     final data = FormData.fromMap(
       <String, dynamic>{
-        'files': <MultipartFile>[
+        'file': <MultipartFile>[
           await MultipartFile.fromFile(
             normalizedFilePath,
             filename: normalizedFileName,
