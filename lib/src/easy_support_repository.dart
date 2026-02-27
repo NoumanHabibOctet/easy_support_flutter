@@ -460,6 +460,8 @@ class EasySupportDioRepository implements EasySupportRepository {
         ),
       );
 
+      debugPrint(
+          'EasySupport media response call: ${response.statusCode} ${response.data}');
       final statusCode = response.statusCode ?? -1;
       if (statusCode < 200 || statusCode >= 300) {
         throw EasySupportApiException(
