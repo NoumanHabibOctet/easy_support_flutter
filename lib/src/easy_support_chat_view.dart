@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'easy_support_chat_controller.dart';
 import 'easy_support_repository.dart';
@@ -75,7 +76,9 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   Future<void>? _socketConnectTask;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _messageController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
   bool _isSending = false;
+  bool _isUploadingMedia = false;
   bool _isLeaving = false;
   bool _isChatClosedByAgent = false;
   bool _isAutoFeedbackFlowRunning = false;
@@ -122,6 +125,8 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
     final inputBorderColor =
         EasySupportColorUtils.blend(widget.primaryColor, Colors.black, 0.04);
     final isComposerLocked = _isChatClosedByAgent || _isLeaving;
+    final isEmojiEnabled = _isEmojiEnabled;
+    final isMediaEnabled = _isMediaEnabled;
     final systemUiStyle = SystemUiOverlayStyle(
       statusBarColor: widget.primaryColor,
       statusBarIconBrightness: widget.onPrimaryColor == Colors.white
@@ -285,22 +290,45 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
                                 ),
                               ),
                             ),
-                            Icon(Icons.attach_file_rounded,
-                                color: isComposerLocked
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade600),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed:
-                                  isComposerLocked ? null : _openEmojiPicker,
-                              icon: Icon(
-                                Icons.sentiment_satisfied,
-                                color: isComposerLocked
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade600,
+                            if (isMediaEnabled) ...[
+                              IconButton(
+                                onPressed: isComposerLocked || _isUploadingMedia
+                                    ? null
+                                    : _onAttachmentPressed,
+                                icon: _isUploadingMedia
+                                    ? SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                            Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.attach_file_rounded,
+                                        color: isComposerLocked
+                                            ? Colors.grey.shade400
+                                            : Colors.grey.shade600,
+                                      ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
+                              const SizedBox(width: 8),
+                            ],
+                            if (isEmojiEnabled) ...[
+                              IconButton(
+                                onPressed:
+                                    isComposerLocked ? null : _openEmojiPicker,
+                                icon: Icon(
+                                  Icons.sentiment_satisfied,
+                                  color: isComposerLocked
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
                             IconButton(
                               onPressed: isComposerLocked ||
                                       _isSending ||
@@ -416,6 +444,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
         isCustomerMessage ? Colors.white : const Color(0xFF374151);
     final border =
         isCustomerMessage ? null : Border.all(color: const Color(0xFFE5E7EB));
+    final isMediaMessage = (message.type ?? '').trim().toLowerCase() == 'media';
 
     return Align(
       alignment: alignment,
@@ -436,13 +465,49 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
                 ]
               : null,
         ),
-        child: Text(
+        child: isMediaMessage
+            ? _buildMediaMessageContent(
+                content,
+                fallbackTextColor: textColor,
+              )
+            : Text(
+                content,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildMediaMessageContent(
+    String content, {
+    required Color fallbackTextColor,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: SizedBox(
+        width: 200,
+        height: 200,
+        child: Image.network(
           content,
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
-          ),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) {
+            return Center(
+              child: Text(
+                content,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: fallbackTextColor,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -511,6 +576,84 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
       if (mounted) {
         setState(() {
           _isSending = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _onAttachmentPressed() async {
+    if (_isUploadingMedia || !_isMediaEnabled || _isChatClosedByAgent) {
+      return;
+    }
+
+    final selectedImage = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+    );
+    if (selectedImage == null) {
+      return;
+    }
+
+    final chatId = widget.session.chatId;
+    final customerId = widget.session.customerId;
+    final workspaceId = widget.channelConfiguration?.workspaceId?.trim();
+    if (chatId == null ||
+        chatId.trim().isEmpty ||
+        customerId == null ||
+        customerId.trim().isEmpty) {
+      return;
+    }
+    if (workspaceId == null || workspaceId.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(
+          content: Text('Media upload failed: workspace_id is missing'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isUploadingMedia = true;
+    });
+
+    try {
+      final mediaUrl = await _repository.uploadCustomerMedia(
+        config: widget.config,
+        workspaceId: workspaceId,
+        filePath: selectedImage.path,
+        fileName: selectedImage.name,
+      );
+
+      await _connectChatSocketIfPossible();
+      final activeConnection = _chatSocketConnection;
+      if (activeConnection == null) {
+        throw StateError('Chat socket is not connected');
+      }
+
+      final payload = EasySupportChatEmitPayload(
+        author: '',
+        body: mediaUrl,
+        chatId: chatId,
+        customerId: customerId,
+        type: 'media',
+        unseenCount: 1,
+      );
+      await activeConnection.sendChatMessage(payload);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: Text('Media upload failed: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingMedia = false;
         });
       }
     }
@@ -598,6 +741,14 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   bool get _isFeedbackEnabled =>
       widget.channelConfiguration?.isFeedbackEnabled == true;
 
+  bool get _isEmojiEnabled =>
+      widget.channelConfiguration?.isEmojiEnabled ??
+      widget.config.isEmojiEnabled;
+
+  bool get _isMediaEnabled =>
+      widget.channelConfiguration?.isMediaEnabled ??
+      widget.config.isMediaEnabled;
+
   Future<EasySupportFeedbackSubmission?> _collectFeedbackIfEnabled({
     bool isDismissible = true,
     bool enableDrag = true,
@@ -662,6 +813,10 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   }
 
   Future<void> _openEmojiPicker() async {
+    if (!_isEmojiEnabled) {
+      return;
+    }
+
     final emoji = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.white,

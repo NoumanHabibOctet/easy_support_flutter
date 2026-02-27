@@ -51,6 +51,17 @@ abstract class EasySupportRepository {
       'submitFeedback is not implemented in this repository.',
     );
   }
+
+  Future<String> uploadCustomerMedia({
+    required EasySupportConfig config,
+    required String workspaceId,
+    required String filePath,
+    required String fileName,
+  }) {
+    throw UnimplementedError(
+      'uploadCustomerMedia is not implemented in this repository.',
+    );
+  }
 }
 
 class EasySupportDioRepository implements EasySupportRepository {
@@ -380,6 +391,117 @@ class EasySupportDioRepository implements EasySupportRepository {
         message: _buildDioErrorMessage(
           error,
           fallback: 'EasySupport feedback request failed for ${uri.path}',
+        ),
+        statusCode: error.response?.statusCode ?? -1,
+        isNetworkError: isNetworkError,
+      );
+    }
+  }
+
+  @override
+  Future<String> uploadCustomerMedia({
+    required EasySupportConfig config,
+    required String workspaceId,
+    required String filePath,
+    required String fileName,
+  }) async {
+    final normalizedWorkspaceId = workspaceId.trim();
+    if (normalizedWorkspaceId.isEmpty) {
+      throw const EasySupportApiException(
+        message: 'workspace_id is empty; cannot upload media',
+        statusCode: -1,
+      );
+    }
+    final normalizedFilePath = filePath.trim();
+    if (normalizedFilePath.isEmpty) {
+      throw const EasySupportApiException(
+        message: 'file path is empty; cannot upload media',
+        statusCode: -1,
+      );
+    }
+    final normalizedFileName = fileName.trim();
+    if (normalizedFileName.isEmpty) {
+      throw const EasySupportApiException(
+        message: 'file name is empty; cannot upload media',
+        statusCode: -1,
+      );
+    }
+
+    final uri =
+        Uri.parse('${config.normalizedApiBaseUrl}/media/customer/upload')
+            .replace(
+      queryParameters: <String, String>{
+        'workspace_id': normalizedWorkspaceId,
+      },
+    );
+    final headers = _buildRequiredHeaders(config);
+    final data = FormData.fromMap(
+      <String, dynamic>{
+        'files': <MultipartFile>[
+          await MultipartFile.fromFile(
+            normalizedFilePath,
+            filename: normalizedFileName,
+          ),
+        ],
+      },
+    );
+
+    try {
+      debugPrint('EasySupport media upload call: ${uri.toString()}');
+      debugPrint('EasySupport media upload headers: $headers');
+      _dio.options.headers.addAll(headers);
+      final response = await _dio.post<dynamic>(
+        uri.toString(),
+        data: data,
+        options: Options(
+          method: 'POST',
+          headers: headers,
+          contentType: Headers.multipartFormDataContentType,
+        ),
+      );
+
+      final statusCode = response.statusCode ?? -1;
+      if (statusCode < 200 || statusCode >= 300) {
+        throw EasySupportApiException(
+          message: 'EasySupport media upload failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+
+      final rawBody = response.data;
+      if (rawBody is! Map) {
+        throw EasySupportApiException(
+          message: 'EasySupport media upload failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+
+      final body = Map<String, dynamic>.from(rawBody);
+      final dataNode = body['data'];
+      if (dataNode is! Map) {
+        throw EasySupportApiException(
+          message: 'EasySupport media upload failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+
+      final url = dataNode['url']?.toString().trim();
+      if (url == null || url.isEmpty) {
+        throw EasySupportApiException(
+          message: 'EasySupport media upload failed for ${uri.path}',
+          statusCode: statusCode,
+        );
+      }
+      return url;
+    } on DioException catch (error) {
+      final isNetworkError = error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout;
+      throw EasySupportApiException(
+        message: _buildDioErrorMessage(
+          error,
+          fallback: 'EasySupport media upload request failed for ${uri.path}',
         ),
         statusCode: error.response?.statusCode ?? -1,
         isNetworkError: isNetworkError,

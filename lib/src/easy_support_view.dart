@@ -102,7 +102,9 @@ class _EasySupportViewState extends State<EasySupportView> {
     final greetingMessage =
         channel?.isGreetingEnabled == true ? channel?.greetingMessage : null;
     final form = channel?.chatForm;
-    final showForm = channel?.hasActiveForm == true && form != null;
+    final isFormEnabled = channel?.isFormEnabled ?? true;
+    final showForm =
+        isFormEnabled && channel?.hasActiveForm == true && form != null;
     final canStartConversation = !_isSubmitting &&
         !_isSessionLoading &&
         (!showForm || _areRequiredFieldsFilled(form: form));
