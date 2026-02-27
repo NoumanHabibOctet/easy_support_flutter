@@ -471,6 +471,7 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
             ? _buildMediaMessageContent(
                 content,
                 fallbackTextColor: textColor,
+                onTap: () => _openMediaPreview(content),
               )
             : Text(
                 content,
@@ -487,31 +488,102 @@ class _EasySupportChatViewState extends State<EasySupportChatView> {
   Widget _buildMediaMessageContent(
     String content, {
     required Color fallbackTextColor,
+    VoidCallback? onTap,
   }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
-        width: 200,
-        height: 200,
-        child: Image.network(
-          content,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) {
-            return Center(
-              child: Text(
-                content,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: fallbackTextColor,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  decoration: TextDecoration.underline,
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          width: 200,
+          height: 200,
+          child: Image.network(
+            content,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) {
+              return Center(
+                child: Text(
+                  content,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: fallbackTextColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
+    );
+  }
+
+  Future<void> _openMediaPreview(String imageUrl) async {
+    if (!mounted || imageUrl.trim().isEmpty) {
+      return;
+    }
+    debugPrint('EasySupport media preview open: $imageUrl');
+
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (dialogContext) {
+        return Scaffold(
+          backgroundColor: Colors.black,
+          body: SafeArea(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Center(
+                    child: InteractiveViewer(
+                      minScale: 1,
+                      maxScale: 4,
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child;
+                          }
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                        errorBuilder: (_, __, ___) {
+                          return const Center(
+                            child: Text(
+                              'Unable to preview image',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
